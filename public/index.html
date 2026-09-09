@@ -1,0 +1,441 @@
+<!-- legacy QA marker: data-context-action="runShop" -->
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Night Shift Duo v8.0.0</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app">
+  <canvas id="game"></canvas>
+  <div id="languageSwitch" class="language-switch" aria-label="Language">
+    <span>Language</span><button id="langRuBtn" class="active" type="button">RUS</button><button id="langEnBtn" type="button">ENG</button>
+  </div>
+
+  <div id="authOverlay" class="overlay auth-overlay visible">
+    <section class="auth-card">
+      <div class="auth-brand"><span class="auth-mark">NSD</span><div><div class="tag">NIGHT SHIFT DUO • V8.0</div><h1>Добро пожаловать на смену</h1><p>Создай аккаунт — прогресс, питомцы, золото и статистика будут привязаны к нему.</p></div></div>
+      <div class="auth-tabs"><button id="authLoginTab" class="active" type="button">Войти</button><button id="authRegisterTab" type="button">Регистрация</button></div>
+      <form id="loginForm" class="auth-form">
+        <label>Логин<input id="loginUsername" maxlength="24" autocomplete="username" placeholder="например milano4kin"></label>
+        <label>Пароль<input id="loginPassword" type="password" maxlength="72" autocomplete="current-password" placeholder="минимум 6 символов"></label>
+        <button class="primary" type="submit">ВОЙТИ</button>
+      </form>
+      <form id="registerForm" class="auth-form hidden">
+        <label>Логин<input id="registerUsername" maxlength="24" autocomplete="username" placeholder="a-z, цифры, _"></label>
+        <label>Имя персонажа<input id="registerDisplayName" maxlength="18" autocomplete="nickname" placeholder="его будут видеть игроки"></label>
+        <label>Пароль<input id="registerPassword" type="password" maxlength="72" autocomplete="new-password" placeholder="минимум 6 символов"></label>
+        <button class="primary" type="submit">СОЗДАТЬ АККАУНТ</button>
+      </form>
+      <div id="authStatus" class="auth-status">Подключение к серверу…</div>
+      <small class="auth-note">Тестовая v8: аккаунты пока хранятся на сервере. Перед публичным релизом перенесём их в постоянную БД.</small>
+    </section>
+  </div>
+
+  <nav id="gameRail" class="game-rail hidden" aria-label="Игровое меню">
+    <button id="railIndexBtn" type="button" title="Индекс">📖<span>Индекс</span></button>
+    <button id="railPauseBtn" type="button" title="Пауза и настройки">⚙<span>Меню</span></button>
+  </nav>
+  <div id="combatLogPanel" class="combat-log-panel hidden"></div>
+  <div id="runTutorialPanel" class="run-tutorial-panel hidden"><div class="tutorial-badge">🎓 ОБУЧЕНИЕ</div><b id="runTutorialTitle">Убей 3 зомби</b><span id="runTutorialProgress">0 / 3</span><button id="skipRunTutorialBtn" type="button">Пропустить</button></div>
+
+  <div id="lobby" class="overlay visible">
+    <section class="panel hero lobby-panel">
+      <div class="tag">NIGHT SHIFT DUO • V8.0.0</div>
+      <h1>Двойной рубеж</h1>
+      <p>Выберите класс, подготовьте снаряжение и отправляйтесь на смену. Новые системы штаба открываются постепенно.</p>
+
+      <div id="lobbyAccountCard" class="lobby-account-card">
+        <div class="account-avatar">☣</div>
+        <div class="account-main"><small id="accountUsername">@player</small><b id="accountDisplayName">Игрок</b><div class="account-level-row"><span id="accountLevelLabel">Уровень аккаунта 1</span><div class="account-xp-track"><i id="accountXpFill"></i></div><em id="accountXpLabel">0 / 100 XP</em></div></div>
+        <div class="account-actions"><button id="openProfileBtn" type="button">👤 Профиль</button><button id="startGuideBtn" type="button">🧭 Гайд</button><button id="openWhatsNewBtn" type="button">✨ Что нового</button><button id="logoutBtn" class="danger-ghost" type="button">Выйти</button></div>
+      </div>
+
+      <div class="lobby-wallet">
+        <div><span class="silver-coin-anim">S</span><b id="lobbySilver">0</b><small>серебро</small></div>
+        <div><span class="gold-coin-anim">G</span><b id="lobbyGold">0</b><small>золото</small></div>
+      </div>
+      <div id="lobbyMetaNav" class="lobby-meta-nav">
+        <button data-lobby-pane="shop" type="button">🛒 <b>Магазин</b><small>всё за серебро</small></button>
+        <button data-lobby-pane="quests" type="button">📜 <b>Квесты</b><small>зарабатывай серебро</small></button>
+        <button data-lobby-pane="upgrades" type="button">⬆ <b>Улучшения</b><small>постоянная прокачка</small></button>
+        <button data-lobby-pane="crates" type="button">🎁 <b>Ящики</b><small>питомцы за золото</small></button>
+        <button data-lobby-pane="pets" type="button">🐾 <b>Питомцы</b><small>инвентарь и индекс</small></button>
+        <button data-lobby-pane="achievements" type="button">🏆 <b>Достижения</b><small>титулы и награды</small></button>
+        <button data-lobby-pane="history" type="button">🕘 <b>История</b><small>последние 5 забегов</small></button>
+      </div>
+
+      <div id="lobbySetup">
+        <div class="section-kicker">ВЫБЕРИ КЛАСС</div>
+        <div class="class-grid">
+          <button class="character selected" data-char="starter">
+            <div class="class-icon starter">★</div>
+            <div><b>Стартовый</b><span class="stars">★</span><small>Базовый класс без бонусов</small><span class="class-price" data-class-price="starter">БЕСПЛАТНО</span></div>
+          </button>
+
+          <button class="character" data-char="shooter">
+            <div class="class-icon shooter">•••</div>
+            <div><b>Стрелок</b><span class="stars">★★</span><small>HK UMP со старта · +30% урон стрельбой</small><span class="class-price" data-class-price="shooter">🔒 150 золота</span></div>
+          </button>
+
+          <button class="character" data-char="cqc">
+            <div class="class-icon cqc">✦</div>
+            <div><b>Master Quarter Combat</b><span class="stars">★★★</span><small>Нож-бабочка · +50% HP · +15% скорость · +28% мили</small><span class="class-price" data-class-price="cqc">🔒 350 золота</span></div>
+          </button>
+
+          <button class="character" data-char="flame">
+            <div class="class-icon flame">🔥</div>
+            <div><b>Пламенный дракон</b><span class="stars">★★★★</span><small>Огненное мачете · +40% HP · усиленный огонь</small><span class="class-price" data-class-price="flame">🔒 700 золота</span></div>
+          </button>
+
+          <button class="character superclass" data-char="soap">
+            <div class="class-icon soap">🫧</div>
+            <div><b>Soap King</b><span class="stars">★★★★★ · SUPERCLASS</span><small>Bubble Gun · 60 пузырей · полная перезарядка 3 мин</small><span class="class-price" data-class-price="soap">🔒 1200 золота</span></div>
+          </button>
+        </div>
+
+        <div class="lobby-mode-grid">
+          <button id="soloBtn" class="lobby-mode primary" type="button">
+            <b>SOLO</b><span>Создать одиночный забег</span>
+          </button>
+          <button id="createLobbyBtn" class="lobby-mode" type="button">
+            <b>СОЗДАТЬ ЛОББИ</b><span>Комната на 2 игроков</span>
+          </button>
+          <button id="showJoinBtn" class="lobby-mode" type="button">
+            <b>ПО КОДУ</b><span>Присоединиться к другу</span>
+          </button>
+        </div>
+
+        <div id="joinCodePanel" class="join-code-panel hidden">
+          <label>Код комнаты<input id="roomInput" maxlength="8" placeholder="Например: A7K2QF"></label>
+          <div class="join-code-actions">
+            <button id="joinBtn" class="primary" type="button">Присоединиться</button>
+            <button id="cancelJoinBtn" type="button">Назад</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="roomWaitPanel" class="room-wait hidden">
+        <div id="roomCodeCard" class="room-code-card">
+          <small id="roomModeLabel">КООПЕРАТИВНОЕ ЛОББИ</small>
+          <b id="roomCodeDisplay">------</b>
+          <span>Код комнаты</span>
+        </div>
+
+        <div id="status" class="status">Ожидание игроков…</div>
+        <div id="roster"></div>
+
+        <button id="startBtn" class="primary hidden" type="button">Начать игру</button>
+        <button id="leaveRoomBtn" class="secondary-room-btn" type="button">Вернуться к выбору классов</button>
+
+        <div class="start-warning">
+          Игра <b>не начнётся сама</b>. Забег стартует только после нажатия «Начать игру» создателем комнаты.
+        </div>
+      </div>
+
+      <div class="help">
+        WASD — движение · SHIFT — бег · 1 — оружие · 2 — мультитул · 3 — аптечка · R — перезарядка · ЛКМ — действие ·
+        постройки выбираются снизу · колесо — поворот стен/ворот · ПКМ — отмена строительства.
+      </div>
+    </section>
+  </div>
+
+  <button id="indexBookBtn" class="index-book-btn" type="button">
+    <span class="book-icon">📖</span>
+    <span>ИНДЕКС</span>
+    <small>бестиарий</small>
+  </button>
+
+
+  <div id="indexOverlay" class="overlay index-overlay">
+    <section class="index-panel">
+      <button id="closeIndexBtn" class="index-close" type="button">×</button>
+      <div class="index-title">
+        <div>
+          <div class="tag">АРХИВ УГРОЗ</div>
+          <h2>ИНДЕКС</h2><div id="indexProgress" class="index-progress">Открыто 0/8</div>
+        </div>
+        <p>Характеристики указаны на первой волне появления. Дальше враги становятся сильнее.</p>
+      </div>
+      <div class="index-tabs">
+        <button id="indexZombieTab" class="active" type="button">Зомби</button>
+        <button id="indexPetTab" type="button">Питомцы</button>
+      </div>
+      <div id="indexGrid" class="index-grid"></div>
+      <div id="indexPetGrid" class="pet-index-list hidden"></div>
+    </section>
+  </div>
+
+  <div id="deathOverlay" class="overlay death-overlay">
+    <section class="death-card">
+      <div class="death-skull">☠</div>
+      <div class="tag">ВАША СМЕНА ВРЕМЕННО ЗАКОНЧЕНА</div>
+      <h2 id="deathTitle">ВЫ ПОГИБЛИ</h2>
+      <p id="deathMessage">Зелёный чубрик оказался убедительнее.</p>
+      <p id="deathSub" class="death-sub">Напарник ещё может поднять тебя.</p>
+      <div id="deathStats" class="death-stats hidden"></div>
+      <div id="deathActions" class="death-actions">
+        <button id="waitReviveBtn" type="button">Ждать напарника</button>
+        <button id="retryRunBtn" class="hidden" type="button">Ещё раз</button>
+        <button id="returnClassesBtn" class="primary" type="button">Вернуться к выбору классов</button>
+      </div>
+    </section>
+  </div>
+
+  <div id="unlockBanner" class="unlock-banner">
+    <div id="unlockPortrait" class="unlock-portrait"></div>
+    <div>
+      <small>НОВАЯ ЗАПИСЬ В ИНДЕКСЕ</small>
+      <b id="unlockTitle">ОТКРЫТ НОВЫЙ ТИП ЗОМБИ</b>
+      <span id="unlockName">ШУСТРИК</span>
+    </div>
+  </div>
+
+  <div id="lobbyMetaOverlay" class="overlay lobby-meta-overlay">
+    <section class="lobby-meta-panel">
+      <button id="closeLobbyMetaBtn" class="index-close" type="button">×</button>
+      <div class="lobby-meta-head">
+        <div><div class="tag">ЦЕНТР ПОДГОТОВКИ</div><h2 id="lobbyMetaTitle">Магазин</h2></div>
+        <div class="meta-wallet-mini"><span><i class="silver-coin-anim">S</i><b id="metaSilver">0</b></span><span><i class="gold-coin-anim">G</i><b id="metaGold">0</b></span></div>
+      </div>
+      <div id="lobbyMetaContent" class="lobby-meta-content"></div>
+    </section>
+  </div>
+
+  <div id="profileOverlay" class="overlay profile-overlay">
+    <section class="profile-panel">
+      <button id="closeProfileBtn" class="index-close" type="button">×</button>
+      <div class="tag">ЛИЧНОЕ ДЕЛО</div><h2 id="profileName">Игрок</h2><p id="profileLogin">@player</p>
+      <div id="profileStats" class="profile-stats"></div>
+      <div class="profile-rename"><h3>Сменить имя персонажа</h3><label>Новое имя<input id="renameInput" maxlength="18"></label><button id="renameBtn" class="primary" type="button">Сохранить имя</button><small id="renameHint"></small></div>
+    </section>
+  </div>
+
+  <div id="whatsNewOverlay" class="overlay whats-new-overlay">
+    <section class="whats-new-card">
+      <button id="closeWhatsNewBtn" class="index-close" type="button">×</button><div class="tag">ОБНОВЛЕНИЕ V8.0</div><h2>РЕВОЛЮЦИЯ ШТАБА</h2>
+      <div class="whats-new-grid"><article><b>🔐 Аккаунты</b><span>Регистрация, вход и имя персонажа.</span></article><article><b>🎓 Обучение</b><span>Гайд по лобби и первый учебный забег.</span></article><article><b>🔓 Открытия</b><span>Функции штаба появляются постепенно.</span></article><article><b>⭐ Уровень аккаунта</b><span>Постоянный XP и профиль со статистикой.</span></article><article><b>🎁 Стартовый подарок</b><span>200 серебра + бесплатный жетон ящика.</span></article><article><b>🧭 Новый интерфейс</b><span>Главное — игра и класс, мета-системы разложены по местам.</span></article></div>
+      <button id="whatsNewOkBtn" class="primary" type="button">ПОГНАЛИ</button>
+    </section>
+  </div>
+
+  <div id="guideOverlay" class="overlay guide-overlay">
+    <section class="guide-card"><div class="guide-step-label" id="guideStepLabel">ШАГ 1 / 6</div><h2 id="guideTitle">Твой профиль</h2><p id="guideText">Здесь хранится постоянный прогресс аккаунта.</p><div class="guide-actions"><button id="skipGuideBtn" type="button">Пропустить</button><button id="nextGuideBtn" class="primary" type="button">Дальше</button></div></section>
+  </div>
+
+  <button id="adminGameBtn" class="admin-game-btn hidden" type="button">🧪 ADMIN</button>
+  <aside id="adminGamePanel" class="admin-game-panel">
+    <div class="admin-game-head"><div><div class="tag">QA BUILD</div><h3>Админ-меню</h3></div><button id="closeAdminGameBtn" type="button">×</button></div>
+    <p>Только для тестов. Перед релизом удалить.</p>
+    <div class="admin-fixed-grid">
+      <button data-admin-resource="wood" data-admin-amount="100">+100 дерева</button>
+      <button data-admin-resource="stone" data-admin-amount="100">+100 камня</button>
+      <button data-admin-resource="scrap" data-admin-amount="250">+250 металла</button>
+      <button data-admin-resource="silver" data-admin-amount="100">+100 серебра</button>
+      <button data-admin-resource="gold" data-admin-amount="100">+100 золота</button>
+      <button data-admin-token="1">+1 жетон ящика</button>
+    </div>
+    <div class="section-label">Оружие</div>
+    <div class="admin-fixed-grid">
+      <button data-admin-weapon="pistol">Пистолет</button><button data-admin-weapon="micro_uzi">Micro Uzi</button>
+      <button data-admin-weapon="ump">HK UMP</button><button data-admin-weapon="butterfly">Нож-бабочка</button>
+      <button data-admin-weapon="fire_machete">Огненное мачете</button><button data-admin-weapon="bubble_blaster">Bubble Gun</button>
+    </div>
+    <div class="section-label">Питомцы</div>
+    <div class="admin-fixed-grid">
+      <button data-admin-pet="panda">Panda</button><button data-admin-pet="cat">Uiai Cat</button><button data-admin-pet="red_dragon">Red Dragon</button>
+      <button data-admin-pet="axolotl">Pink Axolotl</button><button data-admin-pet="duck">Ducktive</button><button data-admin-pet="amethyst_fury">Amethyst Fury</button>
+    </div>
+  </aside>
+
+  <section id="talentDock" class="talent-dock collapsed">
+    <button id="talentHeader" class="talent-head" type="button" title="Свернуть/развернуть дерево талантов">
+      <div>
+        <div class="tag">ТАЛАНТЫ</div>
+        <b id="talentPoints">0 очков</b>
+      </div>
+      <span><span id="talentLevel">ур. 1</span> <span id="talentChevron">▾</span></span>
+    </button>
+    <div id="talentList"></div>
+  </section>
+
+  <div id="interactionHint" class="interaction-hint"></div>
+  <div id="connectionBadge" class="connection-badge">● подключение</div>
+
+  <div id="contextActions" class="context-actions"></div>
+
+  <div id="hotbar" class="hotbar">
+    <button id="weaponHotbarSlot" class="slot tool selected weapon-slot" data-tool="gun" title="1 — текущее оружие">
+      <span class="slot-key">1</span>
+      <img id="weaponSlotImg" class="weapon-slot-img" src="assets/weapons/pistol.png" alt="">
+      <span id="weaponSlotName" class="slot-name">Старый пистолет</span>
+      <span id="weaponSlotStars" class="weapon-slot-stars">★</span>
+      <span id="weaponAmmoLabel" class="weapon-ammo-label">12 / 12</span>
+    </button>
+    <button class="slot tool" data-tool="multitool" title="2 — мультитул">
+      <span class="slot-key">2</span><span class="slot-icon">⛏️</span><span class="slot-name">Мультитул</span>
+    </button>
+
+    <button id="medkitHotbarSlot" class="slot consumable empty" type="button" title="3 — использовать аптечку">
+      <span class="slot-key">3</span><span class="slot-icon">🩹</span><span class="slot-name">Аптечка</span><span id="medkitCount" class="medkit-count">×0</span>
+    </button>
+
+    <div class="hotbar-sep"></div>
+
+    <button class="slot build" data-build="wall">
+      <img class="build-slot-img" src="assets/structures/wall.png" alt="">
+      <span class="slot-name">Стена</span>
+    <span class="slot-cost">18д · 4к</span></button>
+    <button class="slot build" data-build="gate">
+      <img class="build-slot-img" src="assets/structures/gate.png" alt="">
+      <span class="slot-name">Ворота</span>
+    <span class="slot-cost">22д · 5к · 4м</span></button>
+    <button class="slot build" data-build="cannon">
+      <img class="build-slot-img" src="assets/structures/cannon.png" alt="">
+      <span class="slot-name">Пушка</span>
+    <span class="slot-cost">12д · 14к · 55м</span></button>
+    <button class="slot build" data-build="tesla">
+      <img class="build-slot-img" src="assets/structures/tesla.png" alt="">
+      <span class="slot-name">Электро</span>
+    <span class="slot-cost">14д · 10к · 60м</span></button>
+    <button class="slot build" data-build="cat_tower">
+      <img class="build-slot-img" src="assets/structures/cat_tower.png" alt="">
+      <span class="slot-name">Кошка</span>
+    <span class="slot-cost">20д · 6к · 35м</span></button>
+    <button class="slot build" data-build="frost_tower">
+      <img class="build-slot-img" src="assets/structures/frost_tower.png" alt="">
+      <span class="slot-name">Ледяная</span>
+    <span class="slot-cost">14д · 12к · 45м</span></button>
+    <button class="slot build" data-build="flame_tower">
+      <img class="build-slot-img" src="assets/structures/flame_tower.png" alt="">
+      <span class="slot-name">Огненная</span>
+    <span class="slot-cost">18д · 8к · 52м</span></button>
+    <button class="slot build" data-build="spikes">
+      <img class="build-slot-img" src="assets/structures/spikes.png" alt="">
+      <span class="slot-name">Шипы</span>
+    <span class="slot-cost">16д · 2к · 10м</span></button>
+  </div>
+
+  <div id="buildTooltip" class="build-tooltip"></div>
+
+
+  <div id="bossLootPanel" class="boss-loot-panel">
+    <div class="boss-loot-head">
+      <div class="boss-loot-skull">☠</div>
+      <div>
+        <div id="bossLootTitle" class="boss-loot-title">Добыча с босса</div>
+        <div id="bossLootSubtitle" class="boss-loot-subtitle">Босс</div>
+      </div>
+    </div>
+    <div id="bossLootItems" class="boss-loot-items"></div>
+    <div id="bossLootFoot" class="boss-loot-foot">Добыча уже добавлена в инвентарь</div>
+  </div>
+
+
+  <div id="petOverlay" class="overlay pet-overlay">
+    <section class="index-panel pet-panel">
+      <button id="closePetBtn" class="index-close" type="button">×</button>
+      <div class="index-title">
+        <div><div class="tag">PET COLLECTION</div><h2 id="petOverlayTitle">ПИТОМЦЫ</h2><div id="petCoins" class="pet-coins">Серебро: 0 · Золото: 0</div><div id="petEquipCount" class="pet-equip-count">Экипировано 0/1</div></div>
+        <p>Инвентарь пуст, пока питомец реально не выпадет из ящика. Одновременно можно экипировать только одного.</p>
+      </div>
+      <div class="pet-tabs"><button id="petInventoryTab" class="active" type="button">Инвентарь 0/1</button></div>
+      <div id="petList" class="pet-list"></div>
+    </section>
+  </div>
+
+  <div id="pauseOverlay" class="overlay pause-overlay">
+    <section class="pause-card">
+      <div id="pauseMainMenu">
+        <div class="tag">NIGHT SHIFT DUO</div>
+        <h2>Пауза</h2>
+        <p id="pauseModeNote" class="pause-mode-note"></p>
+        <div class="pause-actions">
+          <button id="pauseContinueBtn" class="primary" type="button">Продолжить</button>
+          <button id="pauseSettingsBtn" type="button">Настройки</button>
+          <button id="pauseExitBtn" type="button">Выйти в лобби</button>
+        </div>
+      </div>
+      <div id="pauseSettingsPanel" class="hidden">
+        <div class="tag">НАСТРОЙКИ</div>
+        <h2>Звук и управление</h2>
+        <label class="setting-row checkbox-row"><span>Включить звук</span><input id="settingAudioEnabled" type="checkbox" checked></label>
+        <label class="setting-row"><span>Громкость эффектов</span><input id="settingSfxVolume" type="range" min="0" max="100" value="35"></label>
+        <label class="setting-row"><span>Громкость окружения</span><input id="settingAmbientVolume" type="range" min="0" max="100" value="18"></label>
+        <label class="setting-row checkbox-row"><span>Шаги персонажа</span><input id="settingFootsteps" type="checkbox" checked></label>
+        <label class="setting-row checkbox-row"><span>Показывать админ-кнопку</span><input id="settingAdminVisible" type="checkbox" checked></label>
+        <div class="pause-actions">
+          <button id="pauseBackBtn" type="button">Назад</button>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div id="exitConfirmOverlay" class="overlay exit-confirm-overlay">
+    <section class="exit-confirm-card">
+      <div class="exit-warning-icon">⚠</div>
+      <div class="tag" id="exitConfirmTag">НЕЗАВЕРШЁННЫЙ ЗАБЕГ</div>
+      <h2 id="exitConfirmTitle">Выйти из текущего боя?</h2>
+      <p id="exitConfirmText">Если выйти сейчас, этот бой не попадёт в историю игр, а итоговая награда за незавершённый забег не будет выдана.</p>
+      <div class="exit-confirm-actions">
+        <button id="cancelExitRunBtn" class="primary" type="button">Остаться</button>
+        <button id="confirmExitRunBtn" class="danger" type="button">Выйти без награды</button>
+      </div>
+    </section>
+  </div>
+
+  <div id="runShopOverlay" class="overlay run-shop-overlay">
+    <section class="run-shop-panel">
+      <button id="closeRunShopBtn" class="index-close" type="button">×</button>
+      <div class="tag" id="runShopTag">ПОЛЕВОЙ МАГАЗИН</div>
+      <h2 id="runShopTitle">Оружие и аптечки</h2>
+      <p id="runShopNote" class="muted">Магазин работает только рядом с базой. Покупки действуют в текущем забеге.</p>
+      <div id="runShopContent" class="run-shop-content"></div>
+    </section>
+  </div>
+
+  <div id="structureMenuOverlay" class="overlay structure-menu-overlay">
+    <section class="structure-menu-panel">
+      <button id="closeStructureMenuBtn" class="index-close" type="button">×</button>
+      <div class="tag" id="structureMenuTag">МУЛЬТИТУЛ · ПОСТРОЙКА</div>
+      <h2 id="structureMenuTitle">Постройка</h2>
+      <div class="structure-menu-status">
+        <span id="structureMenuHp">0 / 0 HP</span>
+        <span id="structureMenuLevel">Уровень 1 / 5</span>
+      </div>
+      <div id="structureMenuSummary" class="structure-menu-summary"></div>
+      <div class="structure-menu-actions">
+        <button id="structureRepairBtn" class="repair hidden" type="button">Отремонтировать</button>
+        <button id="structureUpgradeBtn" class="primary" type="button">Улучшить</button>
+        <button id="structureRemoveBtn" class="danger" type="button">Удалить</button>
+        <button id="structureInfoBtn" type="button">Инфо</button>
+      </div>
+      <div id="structureInfoBody" class="structure-info-body hidden"></div>
+    </section>
+  </div>
+
+  <div id="crateOverlay" class="overlay crate-overlay">
+    <section class="crate-panel">
+      <button id="closeCrateBtn" class="index-close" type="button">×</button>
+      <div class="tag">ПРЕМИАЛЬНЫЙ ЯЩИК</div>
+      <h2>Рулетка питомцев</h2>
+      <p class="muted">50 золота · COMMON 50% · UNCOMMON 28% · RARE 12% · EPIC 6% · LEGENDARY 3% · SECRET 1%</p>
+      <div class="crate-window">
+        <div class="crate-center-mark"></div>
+        <div id="crateReel" class="crate-reel"></div>
+      </div>
+      <div id="crateResult" class="crate-result">Нажми «Открыть», чтобы запустить барабан.</div>
+      <div class="crate-actions">
+        <button id="spinCrateBtn" class="primary" type="button">Открыть за 50 золота</button>
+        <button id="skipCrateBtn" class="hidden" type="button">Пропустить анимацию</button>
+      </div>
+    </section>
+  </div>
+
+  <div id="notice"></div>
+</div>
+<script src="client.js"></script>
+</body>
+</html>

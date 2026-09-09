@@ -1,4 +1,3 @@
 #!/usr/bin/env bash
-set -e
-cd app
+set -euo pipefail
 npm start

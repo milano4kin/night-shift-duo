@@ -1,5 +1,11 @@
 # Night Shift Duo v8.0
 
-Account + onboarding + lobby revolution release.
+Полная исходная сборка Night Shift Duo v8.0.
 
-Render build: stable art/audio archive + verified v8 source patch overlay.
+## Render
+Build command: `bash build-render.sh`
+Start command: `bash start-render.sh`
+
+## Локальный запуск
+`npm ci`
+`npm start`
