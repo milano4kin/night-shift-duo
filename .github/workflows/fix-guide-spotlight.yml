@@ -1,0 +1,45 @@
+name: Fix onboarding spotlight
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    if: "!contains(github.event.head_commit.message, '[guide-spotlight-fix]')"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Patch guide spotlight
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('public/style.css')
+          s = p.read_text(encoding='utf-8')
+          old_overlay = '.guide-overlay{background:rgba(2,5,7,.5);backdrop-filter:blur(2px);pointer-events:none}'
+          new_overlay = '.guide-overlay{background:transparent!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;pointer-events:none;overflow:visible}'
+          old_highlight = '.guide-highlight{position:relative!important;z-index:235!important;box-shadow:0 0 0 4px #79d99a,0 0 0 9999px rgba(0,0,0,.55),0 0 45px rgba(121,217,154,.38)!important;border-radius:14px!important}'
+          new_highlight = '.guide-highlight{position:relative!important;z-index:235!important;filter:none!important;opacity:1!important;isolation:isolate;box-shadow:0 0 0 4px #79d99a,0 0 0 9999px rgba(0,0,0,.72),0 0 45px rgba(121,217,154,.46)!important;border-radius:14px!important}'
+          if old_overlay not in s:
+              raise SystemExit('guide overlay rule not found')
+          if old_highlight not in s:
+              raise SystemExit('guide highlight rule not found')
+          s = s.replace(old_overlay, new_overlay, 1)
+          s = s.replace(old_highlight, new_highlight, 1)
+          p.write_text(s, encoding='utf-8')
+          PY
+          grep -F '.guide-overlay{background:transparent!important' public/style.css
+          grep -F '.guide-highlight{position:relative!important;z-index:235!important;filter:none!important;opacity:1!important' public/style.css
+      - name: Remove one-time workflow and commit
+        run: |
+          git config user.name "Night Shift Duo Bot"
+          git config user.email "actions@users.noreply.github.com"
+          git rm .github/workflows/fix-guide-spotlight.yml
+          git add public/style.css
+          git commit -m "[guide-spotlight-fix] Keep tutorial target clear"
+          git push origin HEAD:main
