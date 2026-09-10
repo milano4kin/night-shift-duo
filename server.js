@@ -728,6 +728,12 @@ function petWorldPos(p){
   const side=p.slot===1?-1:1;
   return {x:Number.isFinite(p.petX)?p.petX:p.x+side*104,y:Number.isFinite(p.petY)?p.petY:p.y+72};
 }
+const EQUIPMENT_MAX_LEVEL=5;
+const MULTITOOL_NAMES=["","Старый мультитул","Железный мультитул","Золотой мультитул","Изумрудный мультитул","Алмазный мультитул"];
+const MULTITOOL_UPGRADE_COSTS={2:{wood:16,stone:12,scrap:42},3:{wood:28,stone:24,scrap:88},4:{wood:44,stone:40,scrap:155},5:{wood:68,stone:64,scrap:260}};
+const WEAPON_UPGRADE_COSTS={2:{wood:12,stone:8,scrap:45},3:{wood:22,stone:18,scrap:90},4:{wood:36,stone:32,scrap:165},5:{wood:56,stone:52,scrap:285}};
+function equipmentDamageMultiplier(level){return 1+Math.max(0,Math.min(4,(Number(level)||1)-1))*.16;}
+function equipmentRateMultiplier(level){return 1+Math.max(0,Math.min(4,(Number(level)||1)-1))*.045;}
 function metaUpgradePrice(key,level){
   const cfg=META_UPGRADES[key];if(!cfg)return Infinity;
   return cfg.base+cfg.step*level;
@@ -813,7 +819,7 @@ function resetRunProgress(p){
   const up=p.metaUpgrades||{};
   const bp=up.backpack||0;
   p.inventory={wood:24+bp*4,stone:10+bp*2,scrap:28+bp*6,medkits:(up.medkit||0),items:[]};
-  p.downed=false;p.revive=0;p.lastDeathCause=null;p.shootCd=0;p.harvestCd=0;p.buildCd=0;p.upgradeCd=0;
+  p.downed=false;p.revive=0;p.lastDeathCause=null;p.shootCd=0;p.harvestCd=0;p.buildCd=0;p.upgradeCd=0;p.weaponLevel=1;p.multitoolLevel=1;
   p.runBonuses={damage:0,speed:0};p.runStats={kills:0,harvest:0,waves:0,builds:0,damage:0,coreDamage:0,weaponShots:{},minCoreRatio:1};p.petState=blankPetState();p.petX=p.x+(p.slot===1?-104:104);p.petY=p.y+72;p.slowMoveTimer=0;p.stamina=p.staminaMax=100;p.sprintRegenDelay=0;p.sprinting=false;p.poisonTime=0;p.poisonDps=0;p.burnTime=0;p.burnDps=0;p.comboCount=0;p.comboTimer=0;p.comboBest=0;p.comboTier=0;
   // Consume one copy of each purchased preparation item per run.
   // These are AUTO-ACTIVATED on the next run; the player never has to find a hidden use button.
@@ -865,7 +871,7 @@ function makePlayer(ws,name,profile,slot,character){
     hp:100,maxHp:100,downed:false,revive:0,speed:285,stamina:100,staminaMax:100,sprintRegenDelay:0,sprinting:false,lastDeathCause:null,
     weapon:{type:"pistol",rarity:"common"},weaponAmmo:freshWeaponAmmo("pistol"),
     inventory:{wood:24,stone:10,scrap:28,medkits:0,items:[]},
-    shootCd:0,harvestCd:0,buildCd:0,upgradeCd:0,
+    shootCd:0,harvestCd:0,buildCd:0,upgradeCd:0,weaponLevel:1,multitoolLevel:1,
     bubbleAmmo:60,bubbleAmmoMax:60,bubbleRecharge:0,bubbleAutoReturn:false,
     input:{up:false,down:false,left:false,right:false,sprint:false,shoot:false,ax:1,ay:0},
     dir:{x:1,y:0},score:0,
@@ -1066,6 +1072,11 @@ function waveIntro(w){
 }
 function floorStageForWave(w){
   return Math.max(0,Math.min(9,Math.floor(Math.max(0,(Number(w)||0)-1)/5)));
+}
+function floorStageForRoom(room){
+  const wave=Math.max(0,Number(room?.wave)||0);
+  const completedWave=room?.phase==="day"?wave:Math.max(0,wave-1);
+  return Math.max(0,Math.min(9,Math.floor(completedWave/5)));
 }
 function floorMutationForWave(w){
   const stage=floorStageForWave(w);
@@ -1338,12 +1349,12 @@ function shoot(room,p){
   }
 
   const rarityName=p.weapon.rarity||"common",rarity=RARITIES[rarityName]||RARITIES.common;
-  const rateMult=1+skillValue(p,"gun_rate")/100;
+  const rateMult=(1+skillValue(p,"gun_rate")/100)*equipmentRateMultiplier(p.weaponLevel);
   const classMult=classDamageMultiplier(p,w);
   let petWeaponMult=1;
   if(p.equippedPet==="amethyst_fury")petWeaponMult*=1.35;
   if(p.equippedPet==="red_dragon"&&p.weapon.type==="fire_machete")petWeaponMult*=1.20;
-  const dmgMult=rarity.mult*(1+skillValue(p,"gun_damage")/100)*classMult*(1+((p.runBonuses?.damage)||0)/100)*petWeaponMult*comboDamageMultiplier(p);
+  const dmgMult=rarity.mult*(1+skillValue(p,"gun_damage")/100)*classMult*(1+((p.runBonuses?.damage)||0)/100)*petWeaponMult*comboDamageMultiplier(p)*equipmentDamageMultiplier(p.weaponLevel);
   p.shootCd=w.rate/rateMult;
   p.runStats=p.runStats||{weaponShots:{}};p.runStats.weaponShots=p.runStats.weaponShots||{};p.runStats.weaponShots[p.weapon.type]=(p.runStats.weaponShots[p.weapon.type]||0)+1;
   if(!melee)p.weaponAmmo.mag=Math.max(0,p.weaponAmmo.mag-1);
@@ -1433,16 +1444,17 @@ function harvest(room,p){
     if(d<best){best=d;target=n;}
   }
   if(!target)return;
-  p.harvestCd=.36;
+  const toolLevel=Math.max(1,Math.min(EQUIPMENT_MAX_LEVEL,Number(p.multitoolLevel)||1));
+  p.harvestCd=.36/equipmentRateMultiplier(toolLevel);
   const classGather=1;
   const gatherMult=1+skillValue(p,"gather")/100+(p.metaUpgrades?.gather||0)*.05;
-  const power=12*classGather*gatherMult;
+  const power=12*classGather*gatherMult*equipmentDamageMultiplier(toolLevel);
   target.hp-=power;
   if(target.hp<=0){
     target.alive=false;
     target.respawn=target.type==="tree"?26:target.type==="rock"?34:30;
     const mult=1+skillValue(p,"gather")/100+(p.metaUpgrades?.gather||0)*.05;
-    const amount=Math.round(rand(7,12)*mult);
+    const amount=Math.round(rand(7,12)*mult*(1+(toolLevel-1)*.08));
     if(target.type==="tree")p.inventory.wood+=amount;
     if(target.type==="rock")p.inventory.stone+=amount;
     if(target.type==="scrapPile")p.inventory.scrap+=amount;
@@ -1784,8 +1796,23 @@ function buy(room,p,item){
     p.bubbleAmmo=60;p.bubbleAmmoMax=60;p.bubbleRecharge=0;p.bubbleAutoReturn=false;
   }else p.bubbleAutoReturn=false;
   setWeapon(p,item,"common");
+  p.weaponLevel=1;
   p.unlocks[item]=true;
   send(p.ws,"notice",{text:`Куплено: ${WEAPONS[item].name}. Оружие сразу экипировано`});
+  return true;
+}
+
+function upgradeRunEquipment(room,p,kind){
+  kind=kind==="multitool"?"multitool":"weapon";
+  if(dist(p,room.core)>RUN_SHOP_RADIUS){send(p.ws,"notice",{text:"Улучшения доступны только рядом с генератором"});return false;}
+  const field=kind==="multitool"?"multitoolLevel":"weaponLevel";
+  const current=Math.max(1,Math.min(EQUIPMENT_MAX_LEVEL,Number(p[field])||1));
+  if(current>=EQUIPMENT_MAX_LEVEL){send(p.ws,"notice",{text:"Уже достигнут максимальный уровень"});return false;}
+  const next=current+1,cost=(kind==="multitool"?MULTITOOL_UPGRADE_COSTS:WEAPON_UPGRADE_COSTS)[next];
+  if(!hasCost(p.inventory,cost)){send(p.ws,"notice",{text:missingCostText(p.inventory,cost)});return false;}
+  pay(p.inventory,cost);p[field]=next;
+  const label=kind==="multitool"?MULTITOOL_NAMES[next]:`${WEAPONS[p.weapon?.type]?.name||"Оружие"} ур. ${next}`;
+  send(p.ws,"notice",{text:`Улучшено: ${label}`});
   return true;
 }
 
@@ -2462,7 +2489,7 @@ function safePlayer(p){
     silver:p.silver||0,gold:p.gold||0,petsOwned:normalizePetsOwned(p.petsOwned),equippedPet:p.equippedPet||null,
     runBonuses:p.runBonuses||{damage:0,speed:0},selectedTitle:p.selectedTitle||"Новичок",runStats:p.runStats||{},
     slowMoveTimer:p.slowMoveTimer||0,crateTokens:p.crateTokens||0,
-    poisonTime:p.poisonTime||0,burnTime:p.burnTime||0,
+    poisonTime:p.poisonTime||0,burnTime:p.burnTime||0,weaponLevel:p.weaponLevel||1,multitoolLevel:p.multitoolLevel||1,
     comboCount:p.comboCount||0,comboTimer:p.comboTimer||0,comboBest:p.comboBest||0,comboTier:comboTierFor(p.comboCount||0),
     stamina:Number.isFinite(p.stamina)?p.stamina:100,staminaMax:p.staminaMax||100,sprinting:!!p.sprinting,
     petX:Number.isFinite(p.petX)?p.petX:null,petY:Number.isFinite(p.petY)?p.petY:null
@@ -2478,7 +2505,7 @@ function serializeFor(room,p){
 
   return {
     code:room.code,mode:room.mode,hostId:room.hostId,world:WORLD,started:room.started,paused:room.paused,wave:room.wave,phase:room.phase,elapsed:room.elapsed,qaAdminEnabled:QA_ADMIN_ENABLED,buildVersion:BUILD_VERSION,
-    floorStage:floorStageForWave(room.wave),flawless:room.phase==="night" && room.waveCoreDamageStart!=null && (room.runCoreDamage||0)===room.waveCoreDamageStart,
+    floorStage:floorStageForRoom(room),flawless:room.phase==="night" && room.waveCoreDamageStart!=null && (room.runCoreDamage||0)===room.waveCoreDamageStart,
     phaseTimer:room.phaseTimer,core:room.core,
     nightModifier:room.nightModifier?{id:room.nightModifier.id,name:room.nightModifier.name,reward:room.nightModifier.reward,repair:room.nightModifier.repair,light:room.nightModifier.light}:null,
     modifierOffer:room.modifierOffer?{id:room.modifierOffer.id,name:room.modifierOffer.name,reward:room.modifierOffer.reward,votes:room.modifierVotes?.size||0,needed:Math.max(1,room.players.size),voted:!!room.modifierVotes?.has(p.id),accepted:!!room.acceptedModifier}:null,
@@ -2781,6 +2808,12 @@ wss.on("connection",ws=>{
       const ok=buy(room,p,item);
       send(p.ws,"buyResult",{requestId,item,ok});
     }
+    if(m.type==="runEquipmentUpgrade"){
+      const kind=m.kind==="multitool"?"multitool":"weapon";
+      const requestId=String(m.requestId||"").slice(0,64);
+      const ok=upgradeRunEquipment(room,p,kind);
+      send(p.ws,"equipmentUpgradeResult",{requestId,kind,ok});
+    }
     if(m.type==="admin"){
       if(!QA_ADMIN_ENABLED)return send(ws,"notice",{text:"Админ-команды отключены в обычной сборке"});
       handleAdmin(room,p,m);return;
@@ -2828,12 +2861,12 @@ server.on("error",err=>{
 });
 
 module.exports={
-  floorStageForWave,floorMutationForWave,damageCore,BUILD_VERSION,WORLD,WEAPONS,SHOP,STRUCTURES,PETS,BOSS_BY_WAVE,MINI_BOSS_BY_WAVE,BOSS_GOLD_REWARDS,ZOMBIE_DEBUT,NIGHT_MODIFIERS,CLASS_COSTS,RUN_SHOP_RADIUS,
+  floorStageForWave,floorStageForRoom,floorMutationForWave,damageCore,BUILD_VERSION,WORLD,WEAPONS,SHOP,STRUCTURES,PETS,BOSS_BY_WAVE,MINI_BOSS_BY_WAVE,BOSS_GOLD_REWARDS,ZOMBIE_DEBUT,NIGHT_MODIFIERS,CLASS_COSTS,RUN_SHOP_RADIUS,
   makeRoom,makePlayer,startDay,startWave,spawnZombie,spawnBossLoot,updateRoom,serializeFor,turretShotDamage,safeAxis,
   movePlayerWithCollision,moveZombieWithCollision,entityBlockedByWallsAt,structureBuildCost,structureBuildLimit,activeStructureCount,buildBossLootBundle,comboTierFor,comboDamageMultiplier,comboMoveMultiplier,registerKillCombo,tickPlayerCombo,
   openMetaCrate,skipMetaCrateCooldown,weightedPetRoll,buildCrateReel,loadProgress,saveProgress,petWorldPos,damageZombie,
   resetRunProgress,startReload,finishReload,lobbyShopBuy,lobbyUpgradeBuy,claimMetaQuest,equipMetaPet,unlockMetaClass,selectMetaTitle,
-  buy,build,upgradeStructure,removeStructure,repairSpecificStructure,repairStructureWithTool,recordRun,unlockAchievement,claimAchievement,updateModifierAcceptance,bossLogic,miniBossLogic,
+  buy,upgradeRunEquipment,build,upgradeStructure,removeStructure,repairSpecificStructure,repairStructureWithTool,recordRun,unlockAchievement,claimAchievement,updateModifierAcceptance,bossLogic,miniBossLogic,
   QUEST_COOLDOWN_MS,QUEST_VARIANTS,refreshQuestCycleIfNeeded,
   startRuntime,stopRuntime,server,wss
 };

@@ -177,7 +177,7 @@ const lobby=$("lobby"),status=$("status"),roster=$("roster");
 const notice=$("notice"),contextActions=$("contextActions");
 const tooltip=$("buildTooltip"),talentDock=$("talentDock");
 const deathOverlay=$("deathOverlay"),indexOverlay=$("indexOverlay"),unlockBanner=$("unlockBanner");
-const petOverlay=$("petOverlay"),pauseOverlay=$("pauseOverlay"),crateOverlay=$("crateOverlay"),lobbyMetaOverlay=$("lobbyMetaOverlay"),runShopOverlay=$("runShopOverlay"),exitConfirmOverlay=$("exitConfirmOverlay"),structureMenuOverlay=$("structureMenuOverlay");
+const petOverlay=$("petOverlay"),pauseOverlay=$("pauseOverlay"),crateOverlay=$("crateOverlay"),lobbyMetaOverlay=$("lobbyMetaOverlay"),runShopOverlay=$("runShopOverlay"),runUpgradeOverlay=$("runUpgradeOverlay"),exitConfirmOverlay=$("exitConfirmOverlay"),structureMenuOverlay=$("structureMenuOverlay");
 const lobbyMetaContent=$("lobbyMetaContent"),lobbyMetaTitle=$("lobbyMetaTitle");
 const adminGameBtn=$("adminGameBtn"),adminGamePanel=$("adminGamePanel");
 const gameRail=$("gameRail"),combatLogPanel=$("combatLogPanel");
@@ -186,7 +186,7 @@ const bossLootPanel=$("bossLootPanel"),bossLootTitle=$("bossLootTitle"),bossLoot
 let ws,myId=null,state=null,connected=false,joined=false,character="starter",noticeTimer,isHost=false,roomMode=null,accountState=null,guideStep=0;
 let selectedBuild=null,buildRotation=0,lastHarvest=0,activeTool="gun",pendingClassUnlock=null,selectedStructureId=null,structureInfoExpanded=false,structureDeleteArmed=false;
 let lobbyMetaMode="shop",pauseOpen=false,activeCrateAnimation=null,lastMoveFootstep=0,lastPhaseSeen="",metaState=null,lastReloading=false;
-let crateSpinLocked=false,crateCurrentResult=null,crateRevealTimer=null,serverPaused=false,runShopRenderSig="",pendingRunBuy=null;
+let crateSpinLocked=false,crateCurrentResult=null,crateRevealTimer=null,serverPaused=false,runShopRenderSig="",pendingRunBuy=null,runUpgradeRenderSig="",pendingRunUpgrade=null,runUpgradeTab="weapon";
 let bossLootHideTimer=null;
 let lastFloorStageSeen=-1,lastSnapshotWave=-1,lastLoggedEventText="";
 let combatLog=[];
@@ -558,7 +558,7 @@ function playSfx(kind,ambient=false){
   a.play().catch(()=>{});
 }
 function ambientCue(phase){playSfx(phase==="night"?"night":"day",true);}
-function gameplayUiBlocked(){return lobby.classList.contains("visible")||deathOverlay.classList.contains("visible")||indexOverlay.classList.contains("visible")||petOverlay.classList.contains("visible")||crateOverlay.classList.contains("visible")||pauseOverlay.classList.contains("visible")||lobbyMetaOverlay.classList.contains("visible")||runShopOverlay.classList.contains("visible")||exitConfirmOverlay.classList.contains("visible")||structureMenuOverlay.classList.contains("visible");}
+function gameplayUiBlocked(){return lobby.classList.contains("visible")||deathOverlay.classList.contains("visible")||indexOverlay.classList.contains("visible")||petOverlay.classList.contains("visible")||crateOverlay.classList.contains("visible")||pauseOverlay.classList.contains("visible")||lobbyMetaOverlay.classList.contains("visible")||runShopOverlay.classList.contains("visible")||runUpgradeOverlay.classList.contains("visible")||exitConfirmOverlay.classList.contains("visible")||structureMenuOverlay.classList.contains("visible");}
 
 storageRemove("night_shift_duo_bestiary_v1")
 let discoveredEnemies={};
@@ -637,7 +637,7 @@ function currentFloorTheme(){return floorThemes[state?.floorStage??floorStageFor
 function currentFloorName(){const f=currentFloorTheme();return isEn()?f.nameEn:f.name}
 function announceFloorTransition(){
   if(!state)return;
-  const stage=floorStageForWave(state.wave||0);
+  const stage=state?.floorStage??floorStageForWave(state.wave||0);
   if(lastFloorStageSeen<0){lastFloorStageSeen=stage;return;}
   if(stage!==lastFloorStageSeen){
     lastFloorStageSeen=stage;
@@ -937,7 +937,7 @@ function resetClientToLobby(){
   stopGameInput();
   joined=false;isHost=false;roomMode=null;
   myId=null;state=null;localPred=null;lastFloorStageSeen=-1;lastSnapshotWave=-1;clearCombatLog();
-  selectedBuild=null;activeTool="gun";selectedStructureId=null;structureInfoExpanded=false;structureDeleteArmed=false;pendingRunBuy=null;runShopRenderSig="";
+  selectedBuild=null;activeTool="gun";selectedStructureId=null;structureInfoExpanded=false;structureDeleteArmed=false;pendingRunBuy=null;runShopRenderSig="";pendingRunUpgrade=null;runUpgradeRenderSig="";
   nearCorePreviously=false;baseHintUntil=0;
   smoothPlayers.clear();smoothZombies.clear();
   previousZombieHp.clear();zombieHitFlashUntil.clear();movementDust.length=0;
@@ -947,7 +947,7 @@ function resetClientToLobby(){
   crateOverlay.classList.remove("visible");
   pauseOverlay.classList.remove("visible");
   gameOverActive=false;pauseOpen=false;
-  adminGamePanel.classList.remove("visible");adminGameBtn.classList.add("hidden");lobbyMetaOverlay.classList.remove("visible");runShopOverlay.classList.remove("visible");exitConfirmOverlay.classList.remove("visible");structureMenuOverlay.classList.remove("visible");$("languageSwitch")?.classList.remove("hidden");
+  adminGamePanel.classList.remove("visible");adminGameBtn.classList.add("hidden");lobbyMetaOverlay.classList.remove("visible");runShopOverlay.classList.remove("visible");runUpgradeOverlay.classList.remove("visible");exitConfirmOverlay.classList.remove("visible");structureMenuOverlay.classList.remove("visible");$("languageSwitch")?.classList.remove("hidden");
 
   $("lobbySetup").classList.remove("hidden");
   $("roomWaitPanel").classList.add("hidden");
@@ -1003,7 +1003,8 @@ function updateWeaponHotbar(p){
   const img=$("weaponSlotImg"),name=$("weaponSlotName"),stars=$("weaponSlotStars"),ammo=$("weaponAmmoLabel"),slot=$("weaponHotbarSlot");
   if(!img||!name||!stars||!ammo||!slot)return;
   const type=p?.weapon?.type||"pistol",weaponName=weaponNames[type]||T("Оружие","Weapon");
-  img.src=weaponImagePaths[type]||weaponImagePaths.pistol;name.textContent=weaponName;stars.textContent=filledStars(weaponStars[type]||1);
+  const upgradeLevel=Math.max(1,Math.min(5,Number(p?.weaponLevel)||1));
+  img.src=weaponImagePaths[type]||weaponImagePaths.pistol;name.textContent=`${weaponName} · ${T("ур.","lvl")} ${upgradeLevel}`;stars.textContent=filledStars(Math.max(weaponStars[type]||1,upgradeLevel));
   const a=p?.weaponAmmo,melee=meleeWeapons.has(type);
   ammo.textContent=melee?T("∞ БЕЗ ПЕРЕЗАРЯДКИ","∞ NO RELOAD"):(a?.reloading?`${T("ПЕРЕЗАРЯДКА","RELOADING")} ${Math.max(0,a.reloadTimer||0).toFixed(1)}${T("с","s")}`:`${a?.mag??weaponAmmoUi[type]?.mag??0} / ${a?.max??weaponAmmoUi[type]?.mag??0}`);
   ammo.classList.toggle("reloading",!!a?.reloading);slot.dataset.weapon=type;slot.title=melee?`1 — ${weaponName} · ${T("ближний бой","melee")}`:`1 — ${weaponName} · R ${T("перезарядка","reload")} ${weaponAmmoUi[type]?.reload||0}${T("с","s")}`;
@@ -1080,7 +1081,7 @@ function connect(){
       trackWorldSfx(m.state);
       state=m.state;
       if(state?.eventText&&state.eventText!==lastLoggedEventText){lastLoggedEventText=state.eventText;pushCombatLog(translateServerText(state.eventText),"event");}
-      if(state?.wave!==lastSnapshotWave){
+      if(state?.wave!==lastSnapshotWave||state?.floorStage!==lastFloorStageSeen){
         lastSnapshotWave=state?.wave??-1;
         announceFloorTransition();
       }
@@ -1108,6 +1109,7 @@ function connect(){
       if(current && !current.downed && !gameOverActive && deathOverlay.classList.contains("visible"))hideDeathScreen();
       updateUnifiedUI();
       if(runShopOverlay.classList.contains("visible")){const rp=myPlayer();if(!rp||!state?.core||Math.hypot(rp.x-state.core.x,rp.y-state.core.y)>RUN_SHOP_RADIUS)closeRunShop();else renderRunShop();}
+      if(runUpgradeOverlay.classList.contains("visible")){const rp=myPlayer();if(!rp||!state?.core||Math.hypot(rp.x-state.core.x,rp.y-state.core.y)>RUN_SHOP_RADIUS)closeRunUpgrade();else renderRunUpgrade();}
       if(structureMenuOverlay.classList.contains("visible")){const st=selectedStructure(),rp=myPlayer();if(!st||!rp||localDistanceToStructure(rp.x,rp.y,st)>180)closeStructureMenu();else renderStructureMenu();}
     }
     if(m.type==="metaState"){
@@ -1126,6 +1128,9 @@ function connect(){
         if(m.ok){activeTool="gun";selectedBuild=null;playSfx("coin");updateUnifiedUI(true);}
         if(runShopOverlay.classList.contains("visible"))renderRunShop(true);
       }
+    }
+    if(m.type==="equipmentUpgradeResult"){
+      if(!pendingRunUpgrade||!m.requestId||pendingRunUpgrade.requestId===m.requestId){pendingRunUpgrade=null;runUpgradeRenderSig="";if(m.ok)playSfx("coin");if(runUpgradeOverlay.classList.contains("visible"))renderRunUpgrade(true);updateUnifiedUI(true);}
     }
     if(m.type==="playerDied")showDeathScreen(m.cause||"unknown",false,state?.wave||0);
     if(m.type==="revived"){hideDeathScreen();toast(T("Напарник поднял тебя. Снова в бой!","Your teammate revived you. Back to the fight!"));}
@@ -1292,6 +1297,15 @@ $("runShopContent").addEventListener("click",e=>{
   pendingRunBuy={item,requestId};runShopRenderSig="";renderRunShop(true);send("buy",{item,requestId});
   setTimeout(()=>{if(pendingRunBuy?.requestId===requestId){pendingRunBuy=null;runShopRenderSig="";if(runShopOverlay.classList.contains("visible"))renderRunShop(true);toast(T("Магазин не ответил — попробуйте ещё раз","Shop did not respond — try again"));}},1800);
 });
+$("closeRunUpgradeBtn").onclick=closeRunUpgrade;runUpgradeOverlay.addEventListener("mousedown",e=>{if(e.target===runUpgradeOverlay)closeRunUpgrade();});
+runUpgradeOverlay.addEventListener("click",e=>{
+  const tab=e.target.closest("[data-upgrade-tab]");if(tab){runUpgradeTab=tab.dataset.upgradeTab;runUpgradeRenderSig="";renderRunUpgrade(true);return;}
+  const b=e.target.closest("[data-run-upgrade]");if(!b||b.disabled||pendingRunUpgrade)return;
+  const kind=b.dataset.runUpgrade,requestId=`upgrade_${Date.now()}_${Math.random().toString(36).slice(2,8)}`;
+  pendingRunUpgrade={kind,requestId};runUpgradeRenderSig="";renderRunUpgrade(true);send("runEquipmentUpgrade",{kind,requestId});
+  setTimeout(()=>{if(pendingRunUpgrade?.requestId===requestId){pendingRunUpgrade=null;runUpgradeRenderSig="";if(runUpgradeOverlay.classList.contains("visible"))renderRunUpgrade(true);toast(T("Мастерская не ответила — попробуйте ещё раз","Workshop did not respond — try again"));}},1800);
+});
+$("coreActions").addEventListener("click",e=>{const b=e.target.closest("[data-core-action]");if(!b)return;if(b.dataset.coreAction==="shop")openRunShop();if(b.dataset.coreAction==="upgrade")openRunUpgrade();});
 $("closeStructureMenuBtn").onclick=closeStructureMenu;
 structureMenuOverlay.addEventListener("mousedown",e=>{if(e.target===structureMenuOverlay)closeStructureMenu();});
 $("structureRepairBtn").onclick=()=>{const st=selectedStructure();if(!st||st.hp>=st.maxHp)return;send("structureRepair",{structureId:st.id});structureDeleteArmed=false;setTimeout(()=>renderStructureMenu(),80);};
@@ -1597,6 +1611,26 @@ function openRunShop(){
 }
 function closeRunShop(){runShopOverlay.classList.remove("visible");pendingRunBuy=null;runShopRenderSig="";}
 
+function multitoolName(level){return ["",T("Старый мультитул","Old multitool"),T("Железный мультитул","Iron multitool"),T("Золотой мультитул","Golden multitool"),T("Изумрудный мультитул","Emerald multitool"),T("Алмазный мультитул","Diamond multitool")][level]||T("Мультитул","Multitool");}
+const multitoolUpgradeCosts={2:{wood:16,stone:12,scrap:42},3:{wood:28,stone:24,scrap:88},4:{wood:44,stone:40,scrap:155},5:{wood:68,stone:64,scrap:260}};
+const weaponUpgradeCosts={2:{wood:12,stone:8,scrap:45},3:{wood:22,stone:18,scrap:90},4:{wood:36,stone:32,scrap:165},5:{wood:56,stone:52,scrap:285}};
+function multitoolMini(level){return `<div class="multitool-mini tool-level-${level}"><i></i><b></b></div>`;}
+function renderRunUpgrade(force=false){
+  const p=myPlayer();if(!p)return;const near=state?.core&&Math.hypot(p.x-state.core.x,p.y-state.core.y)<RUN_SHOP_RADIUS;if(!near){closeRunUpgrade();return;}
+  const kind=runUpgradeTab==="multitool"?"multitool":"weapon",level=Math.max(1,Math.min(5,Number(kind==="multitool"?p.multitoolLevel:p.weaponLevel)||1)),next=Math.min(5,level+1),cost=(kind==="multitool"?multitoolUpgradeCosts:weaponUpgradeCosts)[next];
+  const sig=JSON.stringify([lang,kind,level,p.weapon?.type,p.inventory?.wood,p.inventory?.stone,p.inventory?.scrap,pendingRunUpgrade?.kind]);if(!force&&sig===runUpgradeRenderSig)return;runUpgradeRenderSig=sig;
+  document.querySelectorAll("[data-upgrade-tab]").forEach(b=>b.classList.toggle("active",b.dataset.upgradeTab===kind));
+  $("runUpgradeTag").textContent=T("МАСТЕРСКАЯ ГЕНЕРАТОРА","GENERATOR WORKSHOP");$("runUpgradeTitle").textContent=T("Улучшение снаряжения","Equipment upgrades");
+  const maxed=level>=5,affordable=!maxed&&canAfford(p.inventory,cost),pending=pendingRunUpgrade?.kind===kind;
+  const oldName=kind==="multitool"?multitoolName(level):`${weaponNames[p.weapon.type]||T("Оружие","Weapon")} · ${T("ур.","lvl")} ${level}`;
+  const nextName=kind==="multitool"?multitoolName(next):`${weaponNames[p.weapon.type]||T("Оружие","Weapon")} · ${T("ур.","lvl")} ${next}`;
+  const oldVisual=kind==="multitool"?multitoolMini(level):`<img src="${weaponImagePaths[p.weapon.type]||weaponImagePaths.pistol}" alt="">`,nextVisual=kind==="multitool"?multitoolMini(next):`<img src="${weaponImagePaths[p.weapon.type]||weaponImagePaths.pistol}" alt="">`;
+  const gain=maxed?T("Максимальная мощность достигнута","Maximum power reached"):kind==="multitool"?T("Быстрее добыча, больше урон по ресурсам и дополнительный лут.","Faster gathering, more resource damage and bonus loot."):T("+16% урона и +4.5% скорострельности за уровень.","+16% damage and +4.5% fire rate per level.");
+  $("runUpgradeContent").innerHTML=`<div class="equipment-compare"><article>${oldVisual}<small>${T("Сейчас","Current")}</small><b>${oldName}</b></article><span class="upgrade-arrow">→</span><article class="next">${nextVisual}<small>${maxed?"MAX":T("После улучшения","After upgrade")}</small><b>${nextName}</b></article></div><p class="equipment-gain">${gain}</p><button class="equipment-upgrade-button" data-run-upgrade="${kind}" ${maxed||!affordable||pendingRunUpgrade?"disabled":""}>${pending?T("УЛУЧШАЕМ…","UPGRADING…"):maxed?"MAX":`${T("УЛУЧШИТЬ","UPGRADE")} · ${costText(cost)}`}</button>`;
+}
+function openRunUpgrade(){const p=myPlayer();if(!p||!state?.core||Math.hypot(p.x-state.core.x,p.y-state.core.y)>=RUN_SHOP_RADIUS){toast(T("Мастерская работает у генератора","The workshop works near the generator"));return;}runUpgradeRenderSig="";renderRunUpgrade(true);runUpgradeOverlay.classList.add("visible");stopGameInput();playSfx("ui");}
+function closeRunUpgrade(){runUpgradeOverlay.classList.remove("visible");pendingRunUpgrade=null;runUpgradeRenderSig="";}
+
 function hoveredStructureAtCursor(p,maxPlayerDistance=165){
   if(!state||!p||activeTool!=="multitool"||selectedBuild)return null;
   const wx=mouse.x+camera.x,wy=mouse.y+camera.y;
@@ -1725,7 +1759,6 @@ function updateUnifiedUI(force=false){
   const nearCore=coreDist<RUN_SHOP_RADIUS;
   const coreDamaged=state.core.hp<state.core.maxHp;
   if(nearCore){
-    buttons.push(`<button class="run-shop-open" data-context-action="runShop">🛒 ${T("Оружейный магазин","Weapon shop")}</button>`);
     if(coreDamaged){
       const repairOk=canAfford(p.inventory,coreRepairCost);
       buttons.push(`<button class="repair" data-context-action="coreRepair" ${repairOk?"":"disabled"}>🔧 ${T("Ремонт базы","Repair base")} +260 HP · ${costText(coreRepairCost)}</button>`);
@@ -1760,6 +1793,13 @@ contextActions.addEventListener("click",e=>{
   if(action==="coreRepair")send("coreRepair");
   if(action==="coreUpgrade")send("coreUpgrade");
 });
+
+function updateCoreActions(){
+  const el=$("coreActions"),p=myPlayer();if(!el)return;
+  const near=!!(state?.started&&p&&state?.core&&Math.hypot(p.x-state.core.x,p.y-state.core.y)<RUN_SHOP_RADIUS);
+  el.classList.toggle("hidden",!near);if(!near)return;
+  const pos=sc(state.core.x,state.core.y);el.style.left=`${pos.x}px`;el.style.top=`${pos.y+92}px`;
+}
 
 $("talentList").addEventListener("click",e=>{
   const b=e.target.closest("[data-skill]");
@@ -1812,6 +1852,7 @@ function handleEscapeKey(e){
   else if(lobbyMetaOverlay.classList.contains("visible"))lobbyMetaOverlay.classList.remove("visible");
   else if(indexOverlay.classList.contains("visible"))indexOverlay.classList.remove("visible");
   else if(exitConfirmOverlay.classList.contains("visible"))closeExitRunConfirm();
+  else if(runUpgradeOverlay.classList.contains("visible"))closeRunUpgrade();
   else if(runShopOverlay.classList.contains("visible"))closeRunShop();
   else if(adminGamePanel.classList.contains("visible"))adminGamePanel.classList.remove("visible");
   else if(pauseOverlay.classList.contains("visible"))closePause();
@@ -2691,7 +2732,7 @@ function drawPlayer(p){
   if(p.id===myId&&activeTool==="multitool"){
     const now=performance.now(),elapsed=now-toolSwingStart;let swingOffset=0;
     if(elapsed>=0&&elapsed<250){const tt=elapsed/250;if(tt<.62)swingOffset=-.82+(tt/.62)*1.18;else swingOffset=.36-((tt-.62)/.38)*.36;}
-    const baseAngle=Math.atan2(aim.y,aim.x)+swingOffset;ctx.save();ctx.translate(s.x,s.y);ctx.rotate(baseAngle);ctx.strokeStyle="#9a7746";ctx.lineWidth=6;ctx.lineCap="round";ctx.beginPath();ctx.moveTo(18,0);ctx.lineTo(42,0);ctx.stroke();ctx.strokeStyle="#d2d8db";ctx.lineWidth=8;ctx.beginPath();ctx.moveTo(35,-10);ctx.lineTo(46,8);ctx.stroke();ctx.restore();
+    const baseAngle=Math.atan2(aim.y,aim.x)+swingOffset,toolColors=[null,"#aeb7bc","#b9c0c5","#f1c84b","#44d98b","#66e5ff"],toolLevel=Math.max(1,Math.min(5,Number(p.multitoolLevel)||1));ctx.save();ctx.translate(s.x,s.y);ctx.rotate(baseAngle);ctx.strokeStyle=toolLevel===1?"#9a7746":"#55636b";ctx.lineWidth=6;ctx.lineCap="round";ctx.beginPath();ctx.moveTo(18,0);ctx.lineTo(42,0);ctx.stroke();ctx.shadowColor=toolColors[toolLevel];ctx.shadowBlur=toolLevel>=3?8:2;ctx.strokeStyle=toolColors[toolLevel];ctx.lineWidth=8;ctx.beginPath();ctx.moveTo(35,-10);ctx.lineTo(46,8);ctx.stroke();ctx.restore();
   }else if(p.id!==myId||activeTool==="gun")drawHeldWeaponSprite(p,s,aim);
   else if(activeTool==="hands"&&handsImage.complete&&handsImage.naturalWidth){const ang=Math.atan2(aim.y,aim.x);ctx.save();ctx.translate(s.x+aim.x*25,s.y+aim.y*25);ctx.rotate(ang);if(Math.cos(ang)<0)ctx.scale(1,-1);ctx.drawImage(handsImage,-21,-14,42,28);ctx.restore();}
 
@@ -2997,7 +3038,7 @@ function drawHUD(){
   }
 
   const floorH=58;hudPanel(rightX,floorY,rightW,floorH,{fill:'rgba(7,11,17,.93)',stroke:'rgba(255,174,97,.23)'});
-  ctx.fillStyle=floorTheme.hud;ctx.font=`950 ${tiny?15:17}px system-ui`;ctx.fillText(`${T('Этаж','Floor')} ${Math.max(1,Math.ceil(Math.max(1,state.wave)/5))}/10`,rightX+12,floorY+22);
+  ctx.fillStyle=floorTheme.hud;ctx.font=`950 ${tiny?15:17}px system-ui`;ctx.fillText(`${T('Этаж','Floor')} ${Math.max(1,Math.min(10,(Number(state.floorStage)||0)+1))}/10`,rightX+12,floorY+22);
   ctx.fillStyle='#f2bd6b';ctx.font=`850 ${fitCanvasText(currentFloorName(),rightW-68,tiny?11:12,9,'850')}px system-ui`;ctx.fillText(currentFloorName(),rightX+12,floorY+43);
   ctx.fillStyle=floorTheme.accentA;rr(rightX+rightW-52,floorY+9,42,40,10);ctx.fill();ctx.strokeStyle='rgba(255,255,255,.18)';rr(rightX+rightW-51.5,floorY+9.5,41,39,10);ctx.stroke();
   if(floorTheme.pattern==='lava'){ctx.strokeStyle='rgba(255,132,66,.72)';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(rightX+rightW-45,floorY+21);ctx.lineTo(rightX+rightW-36,floorY+36);ctx.lineTo(rightX+rightW-25,floorY+18);ctx.lineTo(rightX+rightW-17,floorY+39);ctx.stroke();}
@@ -3012,7 +3053,7 @@ function drawHUD(){
 
   ctx.fillStyle=state.flawless?'#f0c877':'#9ba7b4';ctx.font='800 10px system-ui';ctx.fillText(state.phase==='night'?(state.flawless?T('◆ Чистая оборона: бонус активен','◆ Flawless defense: bonus active'):T('◇ Бонус обороны потерян','◇ Defense bonus lost')):T('◆ Новый этаж: ремонт построек 25%','◆ New floor: repair structures 25%'),rightX+12,objY+84);
 
-  const res=[['🪵',T('Дерево','Wood'),p.inventory.wood||0,'#ba7a4b'],['🪨',T('Камень','Stone'),p.inventory.stone||0,'#b9c2c8'],['⚙',T('Металл','Scrap'),p.inventory.scrap||0,'#d1d8db'],['✦',T('Серебро','Silver'),p.silver||0,'#b088ff'],['🪙',T('Золото','Gold'),p.gold||0,'#ffc85c'],['🎟',T('Жетон','Token'),p.crateTokens||0,'#d596ff']];
+  const res=[['🪵',T('Дерево','Wood'),p.inventory.wood||0,'#ba7a4b'],['🪨',T('Камень','Stone'),p.inventory.stone||0,'#b9c2c8'],['⚙',T('Металл','Scrap'),p.inventory.scrap||0,'#d1d8db'],['◉',T('Серебро','Silver'),p.silver||0,'#dce7ec'],['🪙',T('Золото','Gold'),p.gold||0,'#ffc85c'],['🎟',T('Жетон','Token'),p.crateTokens||0,'#d596ff']];
   const rpH=tiny?166:178,rpY=Math.max(objY+objH+10,innerHeight-rpH-14);hudPanel(rightX,rpY,rightW,rpH,{fill:'rgba(7,11,17,.93)',stroke:'rgba(182,208,255,.14)'});
   const rowH=(rpH-16)/6;res.forEach((it,idx)=>{const yy=rpY+8+idx*rowH;ctx.fillStyle='rgba(255,255,255,.045)';rr(rightX+8,yy,rightW-16,rowH-3,8);ctx.fill();ctx.fillStyle=it[3];ctx.font=`900 ${tiny?12:14}px system-ui`;ctx.fillText(it[0],rightX+14,yy+rowH*.62);ctx.fillStyle='#dfe7ea';ctx.font=`850 ${tiny?9:11}px system-ui`;ctx.fillText(it[1],rightX+36,yy+rowH*.62);ctx.textAlign='right';ctx.fillStyle='#fff';ctx.font=`950 ${tiny?11:13}px system-ui`;ctx.fillText((Number(it[2])||0).toLocaleString('ru-RU'),rightX+rightW-13,yy+rowH*.62);ctx.textAlign='left';});
 
@@ -3028,12 +3069,13 @@ function frame(now){
   fpsFrames++;if(now-fpsSampleStart>=500){currentFps=Math.round(fpsFrames*1000/(now-fpsSampleStart));fpsFrames=0;fpsSampleStart=now;$("fpsValue").textContent=`FPS ${currentFps}`;$("pingValue").textContent=`PING ${currentPing==null?"--":currentPing+" ms"}`;}
   $("languageSwitch")?.classList.toggle("hidden",!lobby.classList.contains("visible"));
   const inRun=!!state?.started&&!lobby.classList.contains("visible");gameRail?.classList.toggle("hidden",!inRun);combatLogPanel?.classList.toggle("hidden",!inRun);$("quickSettingsBtn")?.classList.toggle("hidden",!inRun);$("performanceHud")?.classList.toggle("hidden",!inRun||!settings.performanceHud);$("indexBookBtn")?.classList.toggle("rail-hidden",inRun);
-  const dt=Math.min(.033,((now||performance.now())-lastFrameTime)/1000);
+  const dt=Math.min(.05,((now||performance.now())-lastFrameTime)/1000);
   lastFrameTime=now||performance.now();
   ctx.clearRect(0,0,innerWidth,innerHeight);
   if(!state)return;
   updateLocalPrediction(dt);
   updateCamera();
+  updateCoreActions();
   const shakeNow=performance.now();
   if(shakeNow<screenShakeUntil){const rem=clamp((screenShakeUntil-shakeNow)/260,0,1);renderShakeX=(Math.random()*2-1)*screenShakePower*rem;renderShakeY=(Math.random()*2-1)*screenShakePower*rem;}
   else{renderShakeX=0;renderShakeY=0;screenShakePower=0;}

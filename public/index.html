@@ -55,7 +55,7 @@
       </div>
 
       <div class="lobby-wallet">
-        <div><span class="silver-coin-anim">S</span><b id="lobbySilver">0</b><small>серебро</small></div>
+        <div><span class="silver-coin-anim">◉</span><b id="lobbySilver">0</b><small>серебро</small></div>
         <div><span class="gold-coin-anim">G</span><b id="lobbyGold">0</b><small>золото</small></div>
       </div>
       <div id="lobbyMetaNav" class="lobby-meta-nav">
@@ -199,7 +199,7 @@
       <button id="closeLobbyMetaBtn" class="index-close" type="button">×</button>
       <div class="lobby-meta-head">
         <div><div class="tag">ЦЕНТР ПОДГОТОВКИ</div><h2 id="lobbyMetaTitle">Магазин</h2></div>
-        <div class="meta-wallet-mini"><span><i class="silver-coin-anim">S</i><b id="metaSilver">0</b></span><span><i class="gold-coin-anim">G</i><b id="metaGold">0</b></span></div>
+        <div class="meta-wallet-mini"><span><i class="silver-coin-anim">◉</i><b id="metaSilver">0</b></span><span><i class="gold-coin-anim">G</i><b id="metaGold">0</b></span></div>
       </div>
       <div id="lobbyMetaContent" class="lobby-meta-content"></div>
     </section>
@@ -266,6 +266,10 @@
   <div id="connectionBadge" class="connection-badge">● подключение</div>
 
   <div id="contextActions" class="context-actions"></div>
+  <div id="coreActions" class="core-actions hidden">
+    <button data-core-action="shop" type="button">SHOP</button>
+    <button data-core-action="upgrade" type="button">UPGRADE</button>
+  </div>
 
   <div id="hotbar" class="hotbar">
     <button id="weaponHotbarSlot" class="slot tool selected weapon-slot" data-tool="gun" title="1 — текущее оружие">
@@ -395,6 +399,19 @@
       <h2 id="runShopTitle">Оружие и аптечки</h2>
       <p id="runShopNote" class="muted">Магазин работает только рядом с базой. Покупки действуют в текущем забеге.</p>
       <div id="runShopContent" class="run-shop-content"></div>
+    </section>
+  </div>
+
+  <div id="runUpgradeOverlay" class="overlay run-upgrade-overlay">
+    <section class="run-shop-panel run-upgrade-panel">
+      <button id="closeRunUpgradeBtn" class="index-close" type="button">×</button>
+      <div class="tag" id="runUpgradeTag">МАСТЕРСКАЯ ГЕНЕРАТОРА</div>
+      <h2 id="runUpgradeTitle">Улучшение снаряжения</h2>
+      <div class="run-upgrade-tabs">
+        <button data-upgrade-tab="weapon" class="active" type="button">ОРУЖИЕ</button>
+        <button data-upgrade-tab="multitool" type="button">МУЛЬТИТУЛ</button>
+      </div>
+      <div id="runUpgradeContent"></div>
     </section>
   </div>
 
