@@ -3,9 +3,20 @@ services:
     name: night-shift-duo
     runtime: node
     plan: free
-    buildCommand: npm ci --omit=dev
-    startCommand: npm start
+    region: frankfurt
+    buildCommand: bash build-render.sh
+    startCommand: bash start-render.sh
     healthCheckPath: /
     envVars:
       - key: NODE_ENV
         value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: night-shift-duo-db
+          property: connectionString
+
+databases:
+  - name: night-shift-duo-db
+    plan: free
+    region: frankfurt
+    postgresMajorVersion: "18"
