@@ -18,7 +18,7 @@ if (!fs.existsSync(SAVE_DIR)) fs.mkdirSync(SAVE_DIR, { recursive: true });
 // do not need another dependency. For public production use, move this store to SQL.
 const ACCOUNTS_FILE = path.join(SAVE_DIR, "accounts.json");
 const RENAME_COOLDOWN_MS = 7 * 24 * 60 * 60 * 1000;
-const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000;
+const SESSION_TTL_MS = 5 * 24 * 60 * 60 * 1000;
 const MAX_SESSIONS_PER_ACCOUNT = 5;
 let accounts = Object.create(null);
 function loadAccounts(){
@@ -44,7 +44,7 @@ function normalizeAccount(a){
   a.onboarding={...defaultOnboarding(),...(a.onboarding||{})};
   a.accountLevel=Math.max(1,Number(a.accountLevel)||1);a.accountXp=Math.max(0,Number(a.accountXp)||0);a.accountNextXp=Math.max(100,Number(a.accountNextXp)||100);
   a.tutorial={active:!!a.tutorial?.active,step:Math.max(0,Number(a.tutorial?.step)||0),kills:Math.max(0,Number(a.tutorial?.kills)||0)};
-  const now=Date.now();a.sessions=(Array.isArray(a.sessions)?a.sessions:[]).filter(s=>s&&/^[a-f0-9]{64}$/.test(String(s.hash||""))&&Number(s.expiresAt)>now).slice(-MAX_SESSIONS_PER_ACCOUNT);
+  const now=Date.now();a.sessions=(Array.isArray(a.sessions)?a.sessions:[]).filter(s=>s&&/^[a-f0-9]{64}$/.test(String(s.hash||""))&&Number(s.expiresAt)>now).map(s=>({...s,expiresAt:Math.min(Number(s.expiresAt),now+SESSION_TTL_MS)})).slice(-MAX_SESSIONS_PER_ACCOUNT);
   return a;
 }
 for(const k of Object.keys(accounts))normalizeAccount(accounts[k]);
