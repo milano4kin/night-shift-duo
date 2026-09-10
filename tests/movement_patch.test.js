@@ -15,8 +15,8 @@ test("v8.5.1 movement patch stays isolated from connection and auth code",()=>{
 
 test("movement and HUD patches remain enabled in release order",()=>{
   const pkg=require(path.join(root,"package.json"));
-  assert.equal(pkg.version,"8.6.1");
-  assert.match(pkg.scripts.start,/dread_shift_v8_6_patch\.js && node dread_shift_v8_6_1_patch\.js && node db_bridge\.js$/);
+  assert.equal(pkg.version,"8.6.2");
+  assert.match(pkg.scripts.start,/dread_shift_v8_6_1_patch\.js && node dread_shift_v8_6_2_patch\.js && node db_bridge\.js$/);
 });
 
 test("notification bell stays in the top-right corner",()=>{
@@ -28,7 +28,7 @@ test("notification bell stays in the top-right corner",()=>{
 test("v8.5.2 fixes every weapon label and restricts QA admin to cattencel",()=>{
   const patch=fs.readFileSync(path.join(root,"dread_shift_v8_5_2_patch.js"),"utf8");
   const pkg=require(path.join(root,"package.json"));
-  assert.equal(pkg.version,"8.6.1");
+  assert.equal(pkg.version,"8.6.2");
   assert.match(patch,/\.weapon-slot \.slot-name/);
   assert.match(patch,/-webkit-line-clamp:2/);
   assert.match(patch,/===\"cattencel\"/);
@@ -65,4 +65,14 @@ test("v8.6.1 visibly separates elbows and moves the weapon ahead of the face",()
   assert.match(patch,/lineTo\(-3,22\)/);
   assert.match(patch,/drawImage\(img,27-recoil/);
   assert.doesNotMatch(patch,/new WebSocket|function connect\(|resumeSession|authRequired/);
+});
+
+test("v8.6.2 balances generator levels and keeps armor only in workshop",()=>{
+  const patch=fs.readFileSync(path.join(root,"dread_shift_v8_6_2_patch.js"),"utf8");
+  assert.match(patch,/wood:100,stone:50, scrap:100/);
+  assert.match(patch,/wood:200,stone:100,scrap:220/);
+  assert.match(patch,/hp:4500/);
+  assert.match(patch,/dual\?40:30/);
+  assert.match(patch,/dist\(room\.core,z\)<330/);
+  assert.match(patch,/remove armor shop card/);
 });
