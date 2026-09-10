@@ -19,8 +19,8 @@ function patchServer(){
   s=required(s,'const BUILD_VERSION = "8.4.0";','const BUILD_VERSION = "8.5.0";',"build version");
   s=required(s,'const SNAPSHOT_HZ = 18;','const SNAPSHOT_HZ = 20;',"snapshot rate");
 
-  // Give clients authoritative movement velocity. Remote players can then be rendered smoothly
-  // between snapshots instead of easing toward a staircase of positions.
+  // Give clients the ACTUAL post-collision movement velocity. Remote players can then be
+  // rendered smoothly between snapshots without extrapolating through walls.
   s=required(s,
     '    id:p.id,slot:p.slot,name:p.name,character:p.character,x:p.x,y:p.y,r:p.r,speed:p.speed,dir:p.dir,',
     '    id:p.id,slot:p.slot,name:p.name,character:p.character,x:p.x,y:p.y,r:p.r,speed:p.speed,dir:p.dir,moveVx:Number(p.moveVx)||0,moveVy:Number(p.moveVy)||0,',
@@ -35,13 +35,13 @@ function patchServer(){
 
   s=required(s,
     '    p.sprinting=wantsSprint&&p.stamina>0;\n    movePlayerWithCollision(room,p,dx,dy,dt);',
-    '    p.sprinting=wantsSprint&&p.stamina>0;\n    const moveN=(dx||dy)?norm(dx,dy):{x:0,y:0};\n    const authoritativeMoveSpeed=p.speed*(p.slowMoveTimer>0?.62:1)*(p.sprinting?1.42:1)*comboMoveMultiplier(p);\n    p.moveVx=moveN.x*authoritativeMoveSpeed;p.moveVy=moveN.y*authoritativeMoveSpeed;\n    movePlayerWithCollision(room,p,dx,dy,dt);',
+    '    p.sprinting=wantsSprint&&p.stamina>0;\n    const moveStartX=p.x,moveStartY=p.y;\n    movePlayerWithCollision(room,p,dx,dy,dt);\n    const moveDt=Math.max(.0001,dt);p.moveVx=(p.x-moveStartX)/moveDt;p.moveVy=(p.y-moveStartY)/moveDt;',
     "authoritative movement velocity"
   );
 
   assertHas(s,'const SNAPSHOT_HZ = 20;',"20 Hz snapshots");
   assertHas(s,'moveVx:Number(p.moveVx)||0',"velocity in safePlayer");
-  assertHas(s,'authoritativeMoveSpeed',"velocity calculation");
+  assertHas(s,'p.moveVx=(p.x-moveStartX)/moveDt',"actual velocity calculation");
   s+='\n/* DREAD SHIFT v8.5 server */\n';
   write("server.js",s);return true;
 }
@@ -74,7 +74,7 @@ function patchClient(){
     '  if(!s){s={x:e.x,y:e.y,lastAt:now};map.set(e.id,s);return s;}',
     '  const dt=Math.min(.05,Math.max(0,(now-(s.lastAt||now))/1000));s.lastAt=now;',
     '  // A snapshot is roughly one network leg old when it arrives. For another player,',
-    '  // project only by that measured one-way delay using the velocity supplied by the server.',
+    '  // project only by that measured one-way delay using the actual velocity supplied by the server.',
     '  const lead=isPlayer?Math.min(.12,Math.max(0,((currentPing||0)+(pingJitter||0)*.35)/2000)):0;',
     '  const tx=e.x+(isPlayer?(Number(e.moveVx)||0)*lead:0),ty=e.y+(isPlayer?(Number(e.moveVy)||0)*lead:0);',
     '  const dist=Math.hypot(tx-s.x,ty-s.y);',
@@ -116,7 +116,7 @@ function patchClient(){
 
   // Old v8.4 reconciliation continuously pulled the local player toward an already stale snapshot.
   // New reconciliation compares against a server position projected to the current moment, leaves a
-  // small prediction dead-zone while moving, and settles only after the key-up packet has had time to arrive.
+  // prediction dead-zone while moving, and settles only after the key-up packet has had time to arrive.
   const oldReconcile=[
     '        const err=Math.hypot(localPred.x-mp.x,localPred.y-mp.y);',
     '        const moving=keys.has("KeyW")||keys.has("KeyA")||keys.has("KeyS")||keys.has("KeyD");',
@@ -152,7 +152,7 @@ function patchClient(){
     '          const deadZone=Math.max(18,Math.min(58,16+serverSpeed*oneWay*.75));',
     '          if(err>deadZone){const step=Math.min(16,(err-deadZone)*.18);if(step>0){localPred.x+=ex/err*step;localPred.y+=ey/err*step;}}',
     '        }else{',
-    '          // Freeze visually just after key-up; the server is still one RTT behind that event.',
+    '          // Hold the local image still just after key-up. This removes the visible "ice" tail.',
     '          const stopGrace=Math.min(280,70+netDelay*1.15);',
     '          if(performance.now()-lastMoveKeyChangeAt>=stopGrace){',
     '            const sx=mp.x-localPred.x,sy=mp.y-localPred.y,se=Math.hypot(sx,sy);',
@@ -192,8 +192,8 @@ function patchClient(){
   const newAvatar="function drawHudAvatar(x,y,size,p,accent='#ffb774'){ctx.save();ctx.fillStyle='rgba(11,15,18,.95)';ctx.beginPath();ctx.arc(x,y,size/2,0,Math.PI*2);ctx.fill();ctx.lineWidth=2;ctx.strokeStyle='rgba(255,196,128,.32)';ctx.stroke();ctx.fillStyle='#d8aa83';ctx.beginPath();ctx.arc(x,y-size*.12,size*.19,0,Math.PI*2);ctx.fill();ctx.fillStyle='#5b3a2a';ctx.beginPath();ctx.arc(x,y-size*.18,size*.2,Math.PI,Math.PI*2);ctx.fill();ctx.fillStyle='#2a3238';ctx.fillRect(x-size*.24,y+size*.02,size*.48,size*.24);ctx.restore();const lvl=Math.max(1,Number(p.level)||1),label=T(`УР ${lvl}`,`LV ${lvl}`);ctx.font='900 8px system-ui';const bw=Math.max(31,ctx.measureText(label).width+10),bh=16,bx=x-size*.43,by=y+size*.27;ctx.fillStyle='rgba(7,11,14,.98)';rr(bx-bw/2,by,bw,bh,8);ctx.fill();ctx.strokeStyle=accent;ctx.lineWidth=1.5;rr(bx-bw/2+.5,by+.5,bw-1,bh-1,8);ctx.stroke();ctx.fillStyle='#f1f5f7';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(label,bx,by+bh/2+.5);ctx.textBaseline='alphabetic';ctx.textAlign='left';}";
   s=required(s,oldAvatar,newAvatar,"clear in-run level badge");
 
-  assertHas(s,'const SNAPSHOT_HZ',"client source sanity");
-  assertHas(s,'sendMovementInputNow()',"immediate movement packets");
+  assertHas(s,'},1000/30);',"30 Hz input result");
+  assertHas(s,'function sendMovementInputNow()',"immediate movement packets");
   assertHas(s,'serverNowX=mp.x+(Number(mp.moveVx)||0)*oneWay',"projected reconciliation");
   assertHas(s,'camera.x=tx;camera.y=ty;',"camera no-drift");
   assertHas(s,'label=T(`УР ${lvl}`,`LV ${lvl}`)',"level label");
