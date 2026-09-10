@@ -1,11 +1,11 @@
 {
-  "name": "night-shift-duo",
-  "version": "8.0.0",
+  "name": "dread-shift",
+  "version": "8.1.0",
   "private": true,
-  "description": "Night Shift Duo v8.0 account, onboarding, lobby and PostgreSQL persistence.",
+  "description": "DREAD SHIFT v8.1 co-op survival game with accounts, progression and PostgreSQL persistence.",
   "main": "db_bridge.js",
   "scripts": {
-    "start": "node auth_policy_patch.js && node hud_layout_patch.js && node network_smoothing_patch.js && node copy_polish_patch.js && node lobby_tools_patch.js && node lobby_visibility_patch.js && node lobby_layer_patch.js && node db_bridge.js",
+    "start": "node auth_policy_patch.js && node hud_layout_patch.js && node network_smoothing_patch.js && node copy_polish_patch.js && node lobby_tools_patch.js && node lobby_visibility_patch.js && node lobby_layer_patch.js && node dread_shift_overhaul_patch.js && node db_bridge.js",
     "start:legacy": "node server.js",
     "test": "node --test tests/*.test.js"
   },
