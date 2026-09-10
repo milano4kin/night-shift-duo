@@ -958,7 +958,7 @@ function resetClientToLobby(){
   roster.innerHTML="";
   status.textContent=T("Ожидание…","Waiting…");
   lobby.classList.add("visible");
-  $("indexBookBtn").classList.add("visible");
+  $("indexBookBtn")?.classList.add("visible");
   updateWeaponHotbar(null);
   updateMedkitHotbar(null);
 }
@@ -1037,7 +1037,7 @@ function enterRoomWaiting(m){
   }else{
     status.textContent=T("Вы присоединились. Ожидаем, когда создатель нажмёт «Начать игру».","You joined. Waiting for the host to press Start game.");
   }
-  $("indexBookBtn").classList.add("visible");
+  $("indexBookBtn")?.classList.add("visible");
   send("getMeta");
 }
 
@@ -1095,7 +1095,7 @@ function connect(){
       }
       if(state.started){
         lobby.classList.remove("visible");
-        $("indexBookBtn").classList.remove("visible");
+        $("indexBookBtn")?.classList.remove("visible");
         adminGameBtn.classList.toggle("hidden",!(state.qaAdminEnabled&&settings.adminVisible));
         if(isTypingInUi(document.activeElement))document.activeElement.blur();
       }
@@ -1348,8 +1348,6 @@ setInterval(()=>{
   if(left<=0&&lobbyMetaMode==="quests"&&lobbyMetaOverlay.classList.contains("visible"))send("getMeta");
 },1000);
 setInterval(()=>{if(ws?.readyState===1)send("clientPing",{sentAt:Date.now()});},2500);
-$("indexBookBtn").onclick=()=>{if(!featureUnlocked("index")){toast(featureLockText("index"));return;}indexOverlay.classList.add("visible");setIndexTab("zombies");send("getMeta");renderIndex();};
-$("railIndexBtn").onclick=()=>$("indexBookBtn").click();
 // Pet loadout is intentionally lobby-only. It cannot be changed during an active run.
 $("quickSettingsBtn").onclick=()=>openPause();
 $("indexZombieTab").onclick=()=>setIndexTab("zombies");$("indexPetTab").onclick=()=>setIndexTab("pets");
@@ -3068,7 +3066,7 @@ function frame(now){
   requestAnimationFrame(frame);
   fpsFrames++;if(now-fpsSampleStart>=500){currentFps=Math.round(fpsFrames*1000/(now-fpsSampleStart));fpsFrames=0;fpsSampleStart=now;$("fpsValue").textContent=`FPS ${currentFps}`;$("pingValue").textContent=`PING ${currentPing==null?"--":currentPing+" ms"}`;}
   $("languageSwitch")?.classList.toggle("hidden",!lobby.classList.contains("visible"));
-  const inRun=!!state?.started&&!lobby.classList.contains("visible");gameRail?.classList.toggle("hidden",!inRun);combatLogPanel?.classList.toggle("hidden",!inRun);$("quickSettingsBtn")?.classList.toggle("hidden",!inRun);$("performanceHud")?.classList.toggle("hidden",!inRun||!settings.performanceHud);$("indexBookBtn")?.classList.toggle("rail-hidden",inRun);
+  const inRun=!!state?.started&&!lobby.classList.contains("visible");gameRail?.classList.toggle("hidden",!inRun);combatLogPanel?.classList.toggle("hidden",!inRun);$("quickSettingsBtn")?.classList.toggle("hidden",!inRun);$("performanceHud")?.classList.toggle("hidden",!inRun||!settings.performanceHud);
   const dt=Math.min(.05,((now||performance.now())-lastFrameTime)/1000);
   lastFrameTime=now||performance.now();
   ctx.clearRect(0,0,innerWidth,innerHeight);

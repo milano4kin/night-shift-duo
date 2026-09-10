@@ -67,3 +67,13 @@ test("equipment upgrades charge resources and stop at level five", () => {
   assert.equal(game.upgradeRunEquipment(room,p,"multitool"),false);
   assert.equal(p.multitoolLevel,5);
 });
+
+test("talents replace the in-game Index rail and the site has a custom icon", () => {
+  const html=fs.readFileSync(path.join(root,"public","index.html"),"utf8");
+  const css=fs.readFileSync(path.join(root,"public","style.css"),"utf8");
+  assert.doesNotMatch(html,/id="indexBookBtn"/);
+  assert.doesNotMatch(html,/id="railIndexBtn"/);
+  assert.match(html,/rel="icon"[^>]+night-shift-duo-icon\.png/);
+  assert.match(css,/Talents now occupy the former left-side Index slot/);
+  assert.ok(fs.statSync(path.join(root,"public","assets","night-shift-duo-icon.png")).size>10000);
+});
