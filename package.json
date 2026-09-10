@@ -1,11 +1,11 @@
 {
   "name": "dread-shift",
-  "version": "8.6.0",
+  "version": "8.6.1",
   "private": true,
-  "description": "DREAD SHIFT v8.6 adds an upgraded generator turret, survivor armor, and improved character arms.",
+  "description": "DREAD SHIFT v8.6.1 adds upgraded generator defenses, survivor armor, and a corrected wide weapon stance.",
   "main": "db_bridge.js",
   "scripts": {
-    "start": "node auth_policy_patch.js && node hud_layout_patch.js && node network_smoothing_patch.js && node copy_polish_patch.js && node lobby_tools_patch.js && node lobby_visibility_patch.js && node lobby_layer_patch.js && node dread_shift_overhaul_patch.js && node dread_shift_v8_2_patch.js && node dread_shift_v8_3_patch.js && node dread_shift_v8_4_patch.js && node dread_shift_v8_5_1_patch.js && node dread_shift_v8_5_2_patch.js && node dread_shift_v8_5_3_patch.js && node dread_shift_v8_5_4_patch.js && node dread_shift_v8_6_patch.js && node db_bridge.js",
+    "start": "node auth_policy_patch.js && node hud_layout_patch.js && node network_smoothing_patch.js && node copy_polish_patch.js && node lobby_tools_patch.js && node lobby_visibility_patch.js && node lobby_layer_patch.js && node dread_shift_overhaul_patch.js && node dread_shift_v8_2_patch.js && node dread_shift_v8_3_patch.js && node dread_shift_v8_4_patch.js && node dread_shift_v8_5_1_patch.js && node dread_shift_v8_5_2_patch.js && node dread_shift_v8_5_3_patch.js && node dread_shift_v8_5_4_patch.js && node dread_shift_v8_6_patch.js && node dread_shift_v8_6_1_patch.js && node db_bridge.js",
     "start:legacy": "node server.js",
     "test": "node --test tests/*.test.js"
   },
