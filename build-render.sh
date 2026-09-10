@@ -1,3 +1,3 @@
 #!/usr/bin/env bash
 set -euo pipefail
-npm ci --omit=dev
+npm install --omit=dev --no-audit --no-fund
