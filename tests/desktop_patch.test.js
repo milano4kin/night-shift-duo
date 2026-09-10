@@ -26,3 +26,12 @@ test("spawn courtyard pattern is stable in world coordinates", () => {
   assert.doesNotMatch(client, /worldHash\(Math\.round\(x\),Math\.round\(y\),7\)/);
 });
 
+test("account login supports persistent revocable browser sessions", () => {
+  const server = fs.readFileSync(path.join(root, "server.js"), "utf8");
+  const client = fs.readFileSync(path.join(root, "public", "client.js"), "utf8");
+  assert.match(server, /SESSION_TTL_MS = 30 \* 24 \* 60 \* 60 \* 1000/);
+  assert.match(server, /m\.type==="resumeSession"/);
+  assert.match(server, /revokeAccountSession\(account,sessionHash\)/);
+  assert.match(client, /storageGet\(sessionKey\)/);
+  assert.match(client, /storageRemove\(sessionKey\)/);
+});

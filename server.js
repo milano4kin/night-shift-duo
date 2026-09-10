@@ -18,6 +18,8 @@ if (!fs.existsSync(SAVE_DIR)) fs.mkdirSync(SAVE_DIR, { recursive: true });
 // do not need another dependency. For public production use, move this store to SQL.
 const ACCOUNTS_FILE = path.join(SAVE_DIR, "accounts.json");
 const RENAME_COOLDOWN_MS = 7 * 24 * 60 * 60 * 1000;
+const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000;
+const MAX_SESSIONS_PER_ACCOUNT = 5;
 let accounts = Object.create(null);
 function loadAccounts(){
   try{const raw=JSON.parse(fs.readFileSync(ACCOUNTS_FILE,"utf8"));if(raw&&typeof raw==="object")accounts=raw;}catch{}
@@ -31,6 +33,7 @@ function cleanDisplayName(v){return String(v||"").trim().replace(/[<>\\/{}\[\]]/
 function validUsername(v){return /^[a-z0-9_]{3,24}$/.test(v);}
 function validPassword(v){return typeof v==="string"&&v.length>=6&&v.length<=72;}
 function hashPassword(password,salt){return crypto.scryptSync(String(password),salt,64).toString("hex");}
+function hashSessionToken(token){return crypto.createHash("sha256").update(String(token||"")).digest("hex");}
 function accountNameTaken(name,exceptUser=null){const n=String(name||"").toLocaleLowerCase("ru");return Object.values(accounts).some(a=>a.username!==exceptUser&&String(a.displayName||"").toLocaleLowerCase("ru")===n);}
 function defaultOnboarding(){return {lobbyTourDone:false,runTutorialDone:false,whatsNewSeen:false};}
 function normalizeAccount(a){
@@ -41,6 +44,7 @@ function normalizeAccount(a){
   a.onboarding={...defaultOnboarding(),...(a.onboarding||{})};
   a.accountLevel=Math.max(1,Number(a.accountLevel)||1);a.accountXp=Math.max(0,Number(a.accountXp)||0);a.accountNextXp=Math.max(100,Number(a.accountNextXp)||100);
   a.tutorial={active:!!a.tutorial?.active,step:Math.max(0,Number(a.tutorial?.step)||0),kills:Math.max(0,Number(a.tutorial?.kills)||0)};
+  const now=Date.now();a.sessions=(Array.isArray(a.sessions)?a.sessions:[]).filter(s=>s&&/^[a-f0-9]{64}$/.test(String(s.hash||""))&&Number(s.expiresAt)>now).slice(-MAX_SESSIONS_PER_ACCOUNT);
   return a;
 }
 for(const k of Object.keys(accounts))normalizeAccount(accounts[k]);
@@ -65,6 +69,24 @@ function authenticateAccount(username,password){
   const want=Buffer.from(String(a.passwordHash||""),"hex");
   if(got.length!==want.length||!crypto.timingSafeEqual(got,want))return null;
   return a;
+}
+function issueAccountSession(account){
+  const token=crypto.randomBytes(32).toString("base64url"),hash=hashSessionToken(token),expiresAt=Date.now()+SESSION_TTL_MS;
+  account.sessions=[...(account.sessions||[]),{hash,expiresAt}].slice(-MAX_SESSIONS_PER_ACCOUNT);saveAccounts();
+  return {token,expiresAt};
+}
+function authenticateAccountSession(token){
+  if(typeof token!=="string"||token.length<32||token.length>128)return null;
+  const hash=hashSessionToken(token),now=Date.now();
+  for(const account of Object.values(accounts)){
+    normalizeAccount(account);const session=account.sessions.find(s=>s.hash===hash&&s.expiresAt>now);
+    if(session)return {account,hash};
+  }
+  return null;
+}
+function revokeAccountSession(account,sessionHash){
+  if(!account||!sessionHash)return;
+  account.sessions=(account.sessions||[]).filter(s=>s.hash!==sessionHash);saveAccounts();
 }
 function featureUnlocksFor(account,prog){
   const best=Math.max(0,Number(prog?.bestWave)||0),known=Object.values(prog?.discoveredEnemies||{}).some(Boolean),lvl=Math.max(1,Number(account?.accountLevel)||1);
@@ -2528,7 +2550,7 @@ function randomRoomCode(){
 const wss=new WebSocketServer({server,maxPayload:WS_MAX_PAYLOAD,perMessageDeflate:false});
 wss.on("error",err=>console.error("WebSocket server error:",err?.message||err));
 wss.on("connection",ws=>{
-  let room=null,p=null,account=null;
+  let room=null,p=null,account=null,sessionHash=null;
   let msgWindowStart=Date.now(),msgCount=0;
   function allowMessage(){
     const now=Date.now();
@@ -2586,20 +2608,27 @@ wss.on("connection",ws=>{
       if(account)return send(ws,"authError",{message:"Вы уже вошли"});
       const result=registerAccount(m.username,m.password,m.displayName);
       if(result.error)return send(ws,"authError",{message:result.error});
-      account=result.account;
+      account=result.account;const session=issueAccountSession(account);sessionHash=hashSessionToken(session.token);
       const target=loadMetaTarget(account.username,account);
-      send(ws,"authSuccess",{account:publicAccountSnapshot(account,target),starterGift:!!result.starterGift});sendMeta(ws,target);return;
+      send(ws,"authSuccess",{account:publicAccountSnapshot(account,target),starterGift:!!result.starterGift,session});sendMeta(ws,target);return;
     }
     if(m.type==="login"){
       if(account)return send(ws,"authError",{message:"Вы уже вошли"});
       const found=authenticateAccount(m.username,m.password);
       if(!found)return send(ws,"authError",{message:"Неверный логин или пароль"});
-      account=found;const target=loadMetaTarget(account.username,account);
-      send(ws,"authSuccess",{account:publicAccountSnapshot(account,target)});sendMeta(ws,target);return;
+      account=found;const session=issueAccountSession(account);sessionHash=hashSessionToken(session.token);const target=loadMetaTarget(account.username,account);
+      send(ws,"authSuccess",{account:publicAccountSnapshot(account,target),session});sendMeta(ws,target);return;
+    }
+    if(m.type==="resumeSession"){
+      if(account)return;
+      const found=authenticateAccountSession(m.token);
+      if(!found)return send(ws,"sessionInvalid");
+      account=found.account;sessionHash=found.hash;const target=loadMetaTarget(account.username,account);
+      send(ws,"authSuccess",{account:publicAccountSnapshot(account,target),resumed:true});sendMeta(ws,target);return;
     }
     if(m.type==="logout"){
       if(p||room)return send(ws,"notice",{text:"Сначала выйдите из комнаты"});
-      account=null;send(ws,"loggedOut");return;
+      revokeAccountSession(account,sessionHash);account=null;sessionHash=null;send(ws,"loggedOut");return;
     }
     if(!account)return send(ws,"authRequired",{message:"Сначала зарегистрируйтесь или войдите"});
     if(m.type==="renameAccount"){

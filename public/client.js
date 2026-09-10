@@ -533,6 +533,7 @@ let nearCorePreviously=false;
 let baseHintUntil=0;
 
 const settingsKey="night_shift_duo_settings_v502";
+const sessionKey="night_shift_duo_session_v1";
 let settings={audioEnabled:true,sfxVolume:34,ambientVolume:18,footsteps:true,adminVisible:true,performanceHud:true};
 try{settings={...settings,...JSON.parse(storageGet(settingsKey)||"null")};}catch{}
 function saveSettings(){storageSet(settingsKey,JSON.stringify(settings))}
@@ -1042,12 +1043,13 @@ function enterRoomWaiting(m){
 function connect(){
   const proto=location.protocol==="https:"?"wss":"ws";
   ws=new WebSocket(`${proto}://${location.host}`);
-  ws.onopen=()=>{connected=true;status.textContent=T("Сервер подключён.","Server connected.");$("connectionBadge").textContent=T("● онлайн","● online");$("connectionBadge").className="connection-badge online";const a=$("authStatus");if(a)a.textContent="Сервер подключён. Войдите или зарегистрируйтесь.";send("clientPing",{sentAt:Date.now()});};
+  ws.onopen=()=>{connected=true;status.textContent=T("Сервер подключён.","Server connected.");$("connectionBadge").textContent=T("● онлайн","● online");$("connectionBadge").className="connection-badge online";const a=$("authStatus"),token=storageGet(sessionKey);if(a)a.textContent=token?"Восстанавливаем вход…":"Сервер подключён. Войдите или зарегистрируйтесь.";if(token)send("resumeSession",{token});send("clientPing",{sentAt:Date.now()});};
   ws.onclose=()=>{connected=false;lobby.classList.add("visible");status.textContent=T("Соединение потеряно. Обновите страницу.","Connection lost. Refresh the page.");$("connectionBadge").textContent=T("● офлайн","● offline");$("connectionBadge").className="connection-badge offline";if($("authStatus"))$("authStatus").textContent="Сервер недоступен. Попробуйте обновить страницу.";};
   ws.onmessage=e=>{
     const m=JSON.parse(e.data);
     if(m.type==="clientPong"){currentPing=Math.max(0,Date.now()-(Number(m.sentAt)||Date.now()));return;}
     if(m.type==="authSuccess"){
+      if(m.session?.token)storageSet(sessionKey,m.session.token);
       accountState=m.account||accountState;$("authOverlay")?.classList.remove("visible");syncAccountUi();send("getMeta");
       if(m.starterGift)toast("🎁 Стартовый подарок: +200 серебра и +1 жетон ящика");
       setTimeout(()=>{if(accountState&&!accountState.onboarding?.whatsNewSeen)openWhatsNew();else if(accountState&&!accountState.onboarding?.lobbyTourDone)startLobbyGuide();},250);
@@ -1056,7 +1058,8 @@ function connect(){
     if(m.type==="authError"||m.type==="accountError"){if($("authStatus"))$("authStatus").textContent=m.message||"Ошибка";toast(m.message||"Ошибка");return;}
     if(m.type==="authRequired"){accountState=null;$("authOverlay")?.classList.add("visible");if($("authStatus"))$("authStatus").textContent=m.message||"Войдите в аккаунт";return;}
     if(m.type==="accountState"){accountState=m.account||accountState;syncAccountUi();renderFeatureLocks();return;}
-    if(m.type==="loggedOut"){accountState=null;metaState=null;$("authOverlay")?.classList.add("visible");syncAccountUi();return;}
+    if(m.type==="sessionInvalid"){storageRemove(sessionKey);if($("authStatus"))$("authStatus").textContent="Сессия истекла. Войдите снова.";return;}
+    if(m.type==="loggedOut"){storageRemove(sessionKey);accountState=null;metaState=null;$("authOverlay")?.classList.add("visible");syncAccountUi();return;}
     if(m.type==="tutorialState"){renderRunTutorial(m.tutorial);return;}
     if(m.type==="error")toast(translateServerText(m.message));
     if(m.type==="joined")enterRoomWaiting(m);
