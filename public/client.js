@@ -513,6 +513,7 @@ const zombieIndexEn={
 const mouse={x:0,y:0,down:false,wx:0,wy:0},keys=new Set(),camera={x:0,y:0};
 const smoothPlayers=new Map(),smoothZombies=new Map();
 let localPred=null,lastFrameTime=performance.now();
+let fpsSampleStart=performance.now(),fpsFrames=0,currentFps=0,currentPing=null;
 const browserProfileId=(()=>{
   let v=storageGet("night_shift_duo_profile_v1");
   if(!v){
@@ -532,7 +533,7 @@ let nearCorePreviously=false;
 let baseHintUntil=0;
 
 const settingsKey="night_shift_duo_settings_v502";
-let settings={audioEnabled:true,sfxVolume:34,ambientVolume:18,footsteps:true,adminVisible:true};
+let settings={audioEnabled:true,sfxVolume:34,ambientVolume:18,footsteps:true,adminVisible:true,performanceHud:true};
 try{settings={...settings,...JSON.parse(storageGet(settingsKey)||"null")};}catch{}
 function saveSettings(){storageSet(settingsKey,JSON.stringify(settings))}
 const sfxPaths={
@@ -658,22 +659,7 @@ function floorThemeLighting(){
   return {day:"rgba(184,146,62,.07)",night:"rgba(255,204,102,.13)",vignette:"rgba(20,16,8,.13)"};
 }
 function getFloorDecor(){
-  const w=state?.world?.w||6400,h=state?.world?.h||4800,cx=w/2,cy=h/2;
-  const padX=380,padY=320,ring=930;
-  const stage=floorStageForWave(state?.wave||0);
-  const mainKind=["crate","brazier","barrel","crystal","lava","obelisk","bones","void","banner","throne"][Math.min(9,stage)]||"crate";
-  return [
-    {x:padX,y:padY,kind:stage===0?"bush":"pillar"},
-    {x:w-padX,y:padY,kind:stage===0?"bush":"pillar"},
-    {x:padX,y:h-padY,kind:stage===0?"bush":"pillar"},
-    {x:w-padX,y:h-padY,kind:stage===0?"bush":"pillar"},
-    {x:cx-ring,y:cy-ring*.55,kind:mainKind},
-    {x:cx+ring,y:cy-ring*.55,kind:mainKind},
-    {x:cx-ring,y:cy+ring*.55,kind:mainKind},
-    {x:cx+ring,y:cy+ring*.55,kind:mainKind},
-    {x:cx,y:padY+150,kind:stage<2?"cart":stage<5?"sigil":stage<8?"totem":"altar"},
-    {x:cx,y:h-padY-150,kind:stage<2?"cart":stage<5?"sigil":stage<8?"totem":"altar"}
-  ];
+  return [];
 }
 function drawFloorProp(kind,sx,sy,pulse=0){
   ctx.save();ctx.translate(sx,sy);
@@ -1056,10 +1042,11 @@ function enterRoomWaiting(m){
 function connect(){
   const proto=location.protocol==="https:"?"wss":"ws";
   ws=new WebSocket(`${proto}://${location.host}`);
-  ws.onopen=()=>{connected=true;status.textContent=T("Сервер подключён.","Server connected.");$("connectionBadge").textContent=T("● онлайн","● online");$("connectionBadge").className="connection-badge online";const a=$("authStatus");if(a)a.textContent="Сервер подключён. Войдите или зарегистрируйтесь.";};
+  ws.onopen=()=>{connected=true;status.textContent=T("Сервер подключён.","Server connected.");$("connectionBadge").textContent=T("● онлайн","● online");$("connectionBadge").className="connection-badge online";const a=$("authStatus");if(a)a.textContent="Сервер подключён. Войдите или зарегистрируйтесь.";send("clientPing",{sentAt:Date.now()});};
   ws.onclose=()=>{connected=false;lobby.classList.add("visible");status.textContent=T("Соединение потеряно. Обновите страницу.","Connection lost. Refresh the page.");$("connectionBadge").textContent=T("● офлайн","● offline");$("connectionBadge").className="connection-badge offline";if($("authStatus"))$("authStatus").textContent="Сервер недоступен. Попробуйте обновить страницу.";};
   ws.onmessage=e=>{
     const m=JSON.parse(e.data);
+    if(m.type==="clientPong"){currentPing=Math.max(0,Date.now()-(Number(m.sentAt)||Date.now()));return;}
     if(m.type==="authSuccess"){
       accountState=m.account||accountState;$("authOverlay")?.classList.remove("visible");syncAccountUi();send("getMeta");
       if(m.starterGift)toast("🎁 Стартовый подарок: +200 серебра и +1 жетон ящика");
@@ -1331,6 +1318,7 @@ exitConfirmOverlay.addEventListener("mousedown",e=>{if(e.target===exitConfirmOve
 
 $("pauseContinueBtn").onclick=closePause;$("retryRunBtn").onclick=()=>{hideDeathScreen();send("restartRun");};$("pauseSettingsBtn").onclick=()=>{$("pauseMainMenu").classList.add("hidden");$("pauseSettingsPanel").classList.remove("hidden");syncSettingsUi();};$("pauseBackBtn").onclick=()=>{$("pauseSettingsPanel").classList.add("hidden");$("pauseMainMenu").classList.remove("hidden");};$("pauseExitBtn").onclick=showExitRunConfirm;
 $("settingAudioEnabled").onchange=e=>{settings.audioEnabled=e.target.checked;saveSettings();};$("settingSfxVolume").oninput=e=>{settings.sfxVolume=Number(e.target.value)||0;saveSettings();};$("settingAmbientVolume").oninput=e=>{settings.ambientVolume=Number(e.target.value)||0;saveSettings();};$("settingFootsteps").onchange=e=>{settings.footsteps=e.target.checked;saveSettings();};$("settingAdminVisible").onchange=e=>{settings.adminVisible=e.target.checked;saveSettings();syncSettingsUi();};
+$("settingPerformanceHud").onchange=e=>{settings.performanceHud=e.target.checked;saveSettings();};
 syncSettingsUi();
 renderClassLocks();
 
@@ -1342,10 +1330,11 @@ setInterval(()=>{
   el.textContent=formatTimeLeft(left);
   if(left<=0&&lobbyMetaMode==="quests"&&lobbyMetaOverlay.classList.contains("visible"))send("getMeta");
 },1000);
+setInterval(()=>{if(ws?.readyState===1)send("clientPing",{sentAt:Date.now()});},2500);
 $("indexBookBtn").onclick=()=>{if(!featureUnlocked("index")){toast(featureLockText("index"));return;}indexOverlay.classList.add("visible");setIndexTab("zombies");send("getMeta");renderIndex();};
 $("railIndexBtn").onclick=()=>$("indexBookBtn").click();
 // Pet loadout is intentionally lobby-only. It cannot be changed during an active run.
-$("railPauseBtn").onclick=()=>openPause();
+$("quickSettingsBtn").onclick=()=>openPause();
 $("indexZombieTab").onclick=()=>setIndexTab("zombies");$("indexPetTab").onclick=()=>setIndexTab("pets");
 $("closeIndexBtn").onclick=()=>indexOverlay.classList.remove("visible");
 indexOverlay.addEventListener("mousedown",e=>{if(e.target===indexOverlay)indexOverlay.classList.remove("visible")});
@@ -1472,6 +1461,7 @@ function openPause(){
 function closePause(){pauseOpen=false;pauseOverlay.classList.remove("visible");if(roomMode==="solo"&&state?.started)send("setPaused",{paused:false});}
 function syncSettingsUi(){
   $("settingAudioEnabled").checked=!!settings.audioEnabled;$("settingSfxVolume").value=settings.sfxVolume;$("settingAmbientVolume").value=settings.ambientVolume;$("settingFootsteps").checked=!!settings.footsteps;
+  $("settingPerformanceHud").checked=!!settings.performanceHud;
   const adminAllowed=!!state?.qaAdminEnabled;$("settingAdminVisible").checked=adminAllowed&&!!settings.adminVisible;$("settingAdminVisible").disabled=!adminAllowed;$("settingAdminVisible").closest("label")?.classList.toggle("hidden",!adminAllowed);
   adminGameBtn.classList.toggle("hidden",!(adminAllowed&&settings.adminVisible&&state?.started));if(!(adminAllowed&&settings.adminVisible))adminGamePanel.classList.remove("visible");
 }
@@ -2155,8 +2145,9 @@ function drawBaseCourtyard(){
   grad.addColorStop(0,'rgba(45,62,58,.80)');grad.addColorStop(.55,'rgba(28,39,40,.72)');grad.addColorStop(1,'rgba(17,24,27,.20)');
   ctx.fillStyle=grad;rr(left,top,w,h,34);ctx.fill();
   ctx.save();rr(left,top,w,h,34);ctx.clip();
-  for(let x=left;x<left+w;x+=tile){for(let y=top;y<top+h;y+=tile){
-    const n=worldHash(Math.round(x),Math.round(y),7);
+  const worldLeft=core.x-w/2,worldTop=core.y-h/2;
+  for(let wx=worldLeft;wx<worldLeft+w;wx+=tile){for(let wy=worldTop;wy<worldTop+h;wy+=tile){
+    const x=wx-camera.x,y=wy-camera.y,n=worldHash(wx,wy,7);
     ctx.fillStyle=n>.52?'rgba(87,99,101,.15)':'rgba(27,34,37,.24)';ctx.fillRect(x+1,y+1,tile-2,tile-2);
     ctx.strokeStyle='rgba(180,194,198,.055)';ctx.strokeRect(x+.5,y+.5,tile-1,tile-1);
     if(n>.83){ctx.strokeStyle='rgba(10,15,17,.20)';ctx.beginPath();ctx.moveTo(x+12,y+17);ctx.lineTo(x+25,y+28);ctx.lineTo(x+37,y+21);ctx.stroke();}
@@ -2189,22 +2180,7 @@ function ambientPropKind(pattern,n){
   const list=sets[pattern]||sets.stone;return list[Math.min(list.length-1,Math.floor(n*list.length))];
 }
 function drawAmbientWorldProps(){
-  const cell=300,pattern=currentFloorTheme().pattern,core=state?.core;
-  const minGX=Math.floor((camera.x-180)/cell),maxGX=Math.ceil((camera.x+innerWidth+180)/cell);
-  const minGY=Math.floor((camera.y-180)/cell),maxGY=Math.ceil((camera.y+innerHeight+180)/cell);
-  for(let gx=minGX;gx<=maxGX;gx++)for(let gy=minGY;gy<=maxGY;gy++){
-    const n=worldHash(gx,gy,13),n2=worldHash(gx,gy,31);if(n<.48)continue;
-    const wx=gx*cell+60+n2*(cell-120),wy=gy*cell+55+worldHash(gx,gy,77)*(cell-110);
-    if(core&&Math.hypot(wx-core.x,wy-core.y)<470)continue;
-    const s=sc(wx,wy);if(s.x<-90||s.y<-90||s.x>innerWidth+90||s.y>innerHeight+90)continue;
-    const pulse=.5+.5*Math.sin(performance.now()*.003+gx*.7+gy*.4),kind=ambientPropKind(pattern,n2);
-    if(pattern==='lava'&&n>.82){
-      const gg=ctx.createRadialGradient(s.x,s.y,4,s.x,s.y,55);gg.addColorStop(0,'rgba(255,82,24,.17)');gg.addColorStop(1,'rgba(255,82,24,0)');ctx.fillStyle=gg;ctx.beginPath();ctx.arc(s.x,s.y,55,0,Math.PI*2);ctx.fill();
-    }
-    shadow(s.x,s.y+16,22,8,.14);
-    ctx.save();ctx.translate(s.x,s.y);ctx.scale(.82+.22*worldHash(gx,gy,99),.82+.22*worldHash(gx,gy,99));drawFloorProp(kind,0,0,pulse);ctx.restore();
-    if((kind==='brazier'||pattern==='lava')&&n>.72)drawWorldTorch(s.x+24,s.y+5,.58,gx+gy);
-  }
+  // Functional harvest nodes remain; non-interactive map clutter is intentionally hidden.
 }
 function drawMovementDust(){
   const now=performance.now();
@@ -2652,7 +2628,7 @@ function petCooldownText(p){
 
 function petVisualWorldPos(p){
   const side=p.slot===1?-1:1;
-  return {x:p.x+side*104,y:p.y+72};
+  return {x:Number.isFinite(p.petX)?p.petX:p.x+side*82,y:Number.isFinite(p.petY)?p.petY:p.y+66};
 }
 function drawPetCompanion(p){
   const petId=p.equippedPet;if(!petId)return;
@@ -2661,13 +2637,11 @@ function drawPetCompanion(p){
   const enemyNear=state.zombies?.some(z=>Math.hypot(z.x-p.x,z.y-p.y)<380),panic=p.hp/p.maxHp<.30;
   const mood=panic?"!":enemyNear?"⚔":"•",pace=enemyNear?.010:.006,bob=Math.sin(performance.now()*pace+p.id)*(panic?7:4);
   const px=s.x,py=s.y-8+bob;
-  shadow(px,py+43,21,8,.18);
-  if(img&&img.complete&&img.naturalWidth)ctx.drawImage(img,px-27,py,54,54);else{ctx.fillStyle="#eef4f6";ctx.beginPath();ctx.arc(px,py+23,14,0,Math.PI*2);ctx.fill();}
+  ctx.save();ctx.globalAlpha=.90;shadow(px,py+43,21,8,.10);
+  if(img&&img.complete&&img.naturalWidth)ctx.drawImage(img,px-27,py,54,54);else{ctx.fillStyle="#eef4f6";ctx.beginPath();ctx.arc(px,py+23,14,0,Math.PI*2);ctx.fill();}ctx.restore();
   const name=petInfo[petId]?.name||petId,cd=petCooldownText(p);
   ctx.textAlign="center";ctx.font="900 10px system-ui";
-  const w=Math.max(136,ctx.measureText(cd).width+22,ctx.measureText(name).width+38),labelY=py-50;
-  ctx.fillStyle="rgba(5,9,11,.94)";ctx.fillRect(px-w/2,labelY,w,31);
-  ctx.strokeStyle=panic?"rgba(239,99,99,.70)":enemyNear?"rgba(230,196,95,.52)":"rgba(116,216,154,.32)";ctx.strokeRect(px-w/2+.5,labelY+.5,w-1,30);
+  const labelY=py-50;
   ctx.fillStyle="#edf5f6";ctx.fillText(`${name}  ${mood}`,px,labelY+12);ctx.font="8px system-ui";ctx.fillStyle="#9fd7b0";ctx.fillText(cd,px,labelY+25);
 }
 
@@ -3048,8 +3022,9 @@ function drawHUD(){
 
 function frame(now){
   requestAnimationFrame(frame);
+  fpsFrames++;if(now-fpsSampleStart>=500){currentFps=Math.round(fpsFrames*1000/(now-fpsSampleStart));fpsFrames=0;fpsSampleStart=now;$("fpsValue").textContent=`FPS ${currentFps}`;$("pingValue").textContent=`PING ${currentPing==null?"--":currentPing+" ms"}`;}
   $("languageSwitch")?.classList.toggle("hidden",!lobby.classList.contains("visible"));
-  const inRun=!!state?.started&&!lobby.classList.contains("visible");gameRail?.classList.toggle("hidden",!inRun);combatLogPanel?.classList.toggle("hidden",!inRun);$("indexBookBtn")?.classList.toggle("rail-hidden",inRun);
+  const inRun=!!state?.started&&!lobby.classList.contains("visible");gameRail?.classList.toggle("hidden",!inRun);combatLogPanel?.classList.toggle("hidden",!inRun);$("quickSettingsBtn")?.classList.toggle("hidden",!inRun);$("performanceHud")?.classList.toggle("hidden",!inRun||!settings.performanceHud);$("indexBookBtn")?.classList.toggle("rail-hidden",inRun);
   const dt=Math.min(.033,((now||performance.now())-lastFrameTime)/1000);
   lastFrameTime=now||performance.now();
   ctx.clearRect(0,0,innerWidth,innerHeight);

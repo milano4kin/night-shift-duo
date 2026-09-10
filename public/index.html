@@ -36,8 +36,9 @@
 
   <nav id="gameRail" class="game-rail hidden" aria-label="Игровое меню">
     <button id="railIndexBtn" type="button" title="Индекс">📖<span>Индекс</span></button>
-    <button id="railPauseBtn" type="button" title="Пауза и настройки">⚙<span>Меню</span></button>
   </nav>
+  <button id="quickSettingsBtn" class="quick-settings-btn hidden" type="button" title="Настройки" aria-label="Настройки">⚙</button>
+  <div id="performanceHud" class="performance-hud hidden" aria-live="polite"><span id="fpsValue">FPS --</span><span id="pingValue">PING --</span></div>
   <div id="combatLogPanel" class="combat-log-panel hidden"></div>
   <div id="runTutorialPanel" class="run-tutorial-panel hidden"><div class="tutorial-badge">🎓 ОБУЧЕНИЕ</div><b id="runTutorialTitle">Убей 3 зомби</b><span id="runTutorialProgress">0 / 3</span><button id="skipRunTutorialBtn" type="button">Пропустить</button></div>
 
@@ -365,6 +366,7 @@
         <label class="setting-row"><span>Громкость эффектов</span><input id="settingSfxVolume" type="range" min="0" max="100" value="35"></label>
         <label class="setting-row"><span>Громкость окружения</span><input id="settingAmbientVolume" type="range" min="0" max="100" value="18"></label>
         <label class="setting-row checkbox-row"><span>Шаги персонажа</span><input id="settingFootsteps" type="checkbox" checked></label>
+        <label class="setting-row checkbox-row"><span>Показывать FPS и ping</span><input id="settingPerformanceHud" type="checkbox" checked></label>
         <label class="setting-row checkbox-row"><span>Показывать админ-кнопку</span><input id="settingAdminVisible" type="checkbox" checked></label>
         <div class="pause-actions">
           <button id="pauseBackBtn" type="button">Назад</button>

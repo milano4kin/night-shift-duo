@@ -703,10 +703,8 @@ function recordRun(p,room,result="gameover"){
   checkAchievements(p,room);saveProgress(p);return row;
 }
 function petWorldPos(p){
-  // Fixed companion lane: the pet no longer swings around when the player aims.
-  // Slot 1 stays lower-left, slot 2 lower-right. Client uses the exact same formula.
   const side=p.slot===1?-1:1;
-  return {x:p.x+side*104,y:p.y+72};
+  return {x:Number.isFinite(p.petX)?p.petX:p.x+side*104,y:Number.isFinite(p.petY)?p.petY:p.y+72};
 }
 function metaUpgradePrice(key,level){
   const cfg=META_UPGRADES[key];if(!cfg)return Infinity;
@@ -794,7 +792,7 @@ function resetRunProgress(p){
   const bp=up.backpack||0;
   p.inventory={wood:24+bp*4,stone:10+bp*2,scrap:28+bp*6,medkits:(up.medkit||0),items:[]};
   p.downed=false;p.revive=0;p.lastDeathCause=null;p.shootCd=0;p.harvestCd=0;p.buildCd=0;p.upgradeCd=0;
-  p.runBonuses={damage:0,speed:0};p.runStats={kills:0,harvest:0,waves:0,builds:0,damage:0,coreDamage:0,weaponShots:{},minCoreRatio:1};p.petState=blankPetState();p.slowMoveTimer=0;p.stamina=p.staminaMax=100;p.sprintRegenDelay=0;p.sprinting=false;p.poisonTime=0;p.poisonDps=0;p.burnTime=0;p.burnDps=0;p.comboCount=0;p.comboTimer=0;p.comboBest=0;p.comboTier=0;
+  p.runBonuses={damage:0,speed:0};p.runStats={kills:0,harvest:0,waves:0,builds:0,damage:0,coreDamage:0,weaponShots:{},minCoreRatio:1};p.petState=blankPetState();p.petX=p.x+(p.slot===1?-104:104);p.petY=p.y+72;p.slowMoveTimer=0;p.stamina=p.staminaMax=100;p.sprintRegenDelay=0;p.sprinting=false;p.poisonTime=0;p.poisonDps=0;p.burnTime=0;p.burnDps=0;p.comboCount=0;p.comboTimer=0;p.comboBest=0;p.comboTier=0;
   // Consume one copy of each purchased preparation item per run.
   // These are AUTO-ACTIVATED on the next run; the player never has to find a hidden use button.
   const activatedPrep=[];
@@ -2098,6 +2096,11 @@ function updateRoom(room,dt){
     p.petState.healCd=Math.max(0,(p.petState.healCd||0)-dt);
     p.petState.attackCd=Math.max(0,(p.petState.attackCd||0)-dt);
     p.petState.utilityCd=Math.max(0,(p.petState.utilityCd||0)-dt);
+    if(p.equippedPet){
+      const side=p.slot===1?-1:1,targetX=p.x+side*82,targetY=p.y+66;
+      if(!Number.isFinite(p.petX)||!Number.isFinite(p.petY)||Math.hypot(p.petX-p.x,p.petY-p.y)>520){p.petX=targetX;p.petY=targetY;}
+      else{const dx=targetX-p.petX,dy=targetY-p.petY,d=Math.hypot(dx,dy);if(d>22){const step=Math.min(d,Math.min(185,55+d*.42)*dt);p.petX+=dx/d*step;p.petY+=dy/d*step;}}
+    }
 
     if(p.bubbleRecharge>0){
       p.bubbleRecharge=Math.max(0,p.bubbleRecharge-dt);
@@ -2439,7 +2442,8 @@ function safePlayer(p){
     slowMoveTimer:p.slowMoveTimer||0,crateTokens:p.crateTokens||0,
     poisonTime:p.poisonTime||0,burnTime:p.burnTime||0,
     comboCount:p.comboCount||0,comboTimer:p.comboTimer||0,comboBest:p.comboBest||0,comboTier:comboTierFor(p.comboCount||0),
-    stamina:Number.isFinite(p.stamina)?p.stamina:100,staminaMax:p.staminaMax||100,sprinting:!!p.sprinting
+    stamina:Number.isFinite(p.stamina)?p.stamina:100,staminaMax:p.staminaMax||100,sprinting:!!p.sprinting,
+    petX:Number.isFinite(p.petX)?p.petX:null,petY:Number.isFinite(p.petY)?p.petY:null
   };
 }
 function serializeFor(room,p){
@@ -2576,6 +2580,7 @@ wss.on("connection",ws=>{
     try{m=JSON.parse(String(raw));}catch{return;}
     if(!m||typeof m!=="object"||Array.isArray(m))return;
     m.type=String(m.type||"").slice(0,48);
+    if(m.type==="clientPing"){send(ws,"clientPong",{sentAt:Number(m.sentAt)||Date.now()});return;}
 
     if(m.type==="register"){
       if(account)return send(ws,"authError",{message:"Вы уже вошли"});

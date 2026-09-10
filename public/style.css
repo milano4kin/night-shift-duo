@@ -580,6 +580,17 @@ button:hover{will-change:auto}.character:hover,.lobby-mode:hover,.slot:hover,.in
 @media(max-width:900px){.pet-index-list{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:620px){.pet-index-list{grid-template-columns:1fr}}
 
+/* v8.0 desktop HUD patch: clear corners, readable chat, performance telemetry. */
+.quick-settings-btn{position:absolute;right:16px;top:16px;z-index:42;width:48px;height:48px;border:1px solid #40556a;border-radius:13px;background:linear-gradient(180deg,rgba(25,37,49,.97),rgba(8,13,18,.97));color:#edf5f8;font-size:23px;box-shadow:0 12px 34px rgba(0,0,0,.42);cursor:pointer}
+.quick-settings-btn:hover{border-color:#f0aa59;background:#202d38}
+.performance-hud{position:absolute;left:14px;bottom:18px;z-index:40;display:flex;gap:12px;padding:7px 10px;border:1px solid rgba(126,180,226,.18);border-radius:9px;background:rgba(5,9,13,.76);color:#a9d8f5;font:900 10px/1 system-ui;letter-spacing:.045em;pointer-events:none;backdrop-filter:blur(5px)}
+.performance-hud span+span{color:#8fe1ab}
+.combat-log-panel{left:14px!important;bottom:58px!important;width:min(430px,calc(100vw - 540px))!important;max-height:190px!important;padding:13px 15px!important;font-size:12px!important;line-height:1.62!important;opacity:1!important}
+.talent-dock,.talent-dock.collapsed{left:auto!important;right:16px!important;top:232px!important;bottom:auto!important;width:245px!important;max-height:calc(100vh - 390px)!important}
+.talent-dock.collapsed{max-height:56px!important;width:220px!important}
+@media(max-width:1100px){.combat-log-panel{width:330px!important}.talent-dock,.talent-dock.collapsed{right:10px!important;width:210px!important}}
+@media(max-width:760px){.quick-settings-btn{right:10px;top:10px}.performance-hud,.combat-log-panel,.talent-dock{display:none!important}}
+
 
 /* v4.4.1 spoiler / stable-interaction hotfix */
 .pet-index-locked{min-height:285px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;opacity:.82;background:linear-gradient(180deg,#0e1417,#090d0f)!important;border-color:rgba(255,255,255,.055)!important}
@@ -1036,3 +1047,10 @@ html,body{background:#07090d}
 
 @media(max-width:1000px){.lobby-meta-nav{grid-template-columns:repeat(4,minmax(0,1fr))!important}.lobby-account-card{grid-template-columns:50px 1fr}.account-actions{grid-column:1/-1;justify-content:flex-start}.profile-stats{grid-template-columns:repeat(3,1fr)}}
 @media(max-width:680px){.auth-brand{display:block}.auth-mark{margin-bottom:12px}.lobby-meta-nav{grid-template-columns:repeat(2,minmax(0,1fr))!important}.account-level-row{grid-template-columns:1fr}.whats-new-grid{grid-template-columns:1fr}.profile-stats{grid-template-columns:repeat(2,1fr)}.guide-card{right:12px;left:12px;bottom:12px;width:auto}.run-tutorial-panel{top:8px;min-width:0;width:calc(100vw - 24px)}}
+
+/* Final desktop HUD placement (kept last to win over legacy compatibility rules). */
+.combat-log-panel{left:14px!important;bottom:58px!important;width:min(430px,calc(100vw - 540px))!important;max-height:190px!important;padding:13px 15px!important;font-size:12px!important;line-height:1.62!important;opacity:1!important}
+.talent-dock,.talent-dock.collapsed{left:auto!important;right:16px!important;top:232px!important;bottom:auto!important;width:245px!important;max-height:calc(100vh - 390px)!important}
+.talent-dock.collapsed{max-height:56px!important;width:220px!important}
+@media(max-width:1100px){.combat-log-panel{width:330px!important;display:block!important}.talent-dock,.talent-dock.collapsed{right:10px!important;width:210px!important}}
+@media(max-width:760px){.performance-hud,.combat-log-panel,.talent-dock{display:none!important}}
