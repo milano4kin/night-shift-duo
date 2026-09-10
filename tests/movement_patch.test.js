@@ -18,3 +18,9 @@ test("v8.5.1 is enabled after stable v8.4",()=>{
   assert.equal(pkg.version,"8.5.1");
   assert.match(pkg.scripts.start,/dread_shift_v8_4_patch\.js && node dread_shift_v8_5_1_patch\.js && node db_bridge\.js$/);
 });
+
+test("notification bell stays in the top-right corner",()=>{
+  const patch=fs.readFileSync(path.join(root,"dread_shift_v8_4_patch.js"),"utf8");
+  assert.match(patch,/\.notification-bell\{top:14px!important;right:14px!important\}/);
+  assert.match(patch,/\.notification-center\{top:68px!important;right:14px!important\}/);
+});

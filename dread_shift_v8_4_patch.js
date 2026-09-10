@@ -154,8 +154,8 @@ function patchCss(){
   if(s.includes("/* DREAD SHIFT v8.4 UI */"))return false;
   s+='\n/* DREAD SHIFT v8.4 UI */\n'+
     '/* Lobby-only bell: close enough to the language switch to feel related, but with a clear gap. */\n'+
-    '.notification-bell{top:102px!important;right:18px!important}.notification-center{top:156px!important;right:18px!important}\n'+
-    '@media(max-width:760px){.notification-bell{top:94px!important;right:10px!important}.notification-center{top:148px!important;right:10px!important}}\n';
+    '.notification-bell{top:14px!important;right:14px!important}.notification-center{top:68px!important;right:14px!important}\n'+
+    '@media(max-width:760px){.notification-bell{top:10px!important;right:10px!important}.notification-center{top:62px!important;right:10px!important}}\n';
   write("public/style.css",s);return true;
 }
 
