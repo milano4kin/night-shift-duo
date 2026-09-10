@@ -58,11 +58,13 @@ async function startWithFileSaves() {
 
 async function startWithPostgres() {
   const { Pool } = require("pg");
+  const isLocalDb = /^postgres(?:ql)?:\/\/(?:[^@]+@)?(?:localhost|127\.0\.0\.1)(?::|\/)/i.test(DATABASE_URL);
   const pool = new Pool({
     connectionString: DATABASE_URL,
     max: Math.max(2, Math.min(10, Number(process.env.NSD_DB_POOL_MAX) || 4)),
     idleTimeoutMillis: 30000,
     connectionTimeoutMillis: 10000,
+    ...(isLocalDb ? {} : { ssl: { rejectUnauthorized: false } }),
   });
 
   ensureSaveDir();
