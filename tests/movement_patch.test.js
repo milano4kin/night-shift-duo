@@ -13,14 +13,25 @@ test("v8.5.1 movement patch stays isolated from connection and auth code",()=>{
   assert.match(patch,/camera\.x=tx;camera\.y=ty/);
 });
 
-test("v8.5.1 is enabled after stable v8.4",()=>{
+test("v8.5.1 movement remains enabled before v8.5.2",()=>{
   const pkg=require(path.join(root,"package.json"));
-  assert.equal(pkg.version,"8.5.1");
-  assert.match(pkg.scripts.start,/dread_shift_v8_4_patch\.js && node dread_shift_v8_5_1_patch\.js && node db_bridge\.js$/);
+  assert.equal(pkg.version,"8.5.2");
+  assert.match(pkg.scripts.start,/dread_shift_v8_4_patch\.js && node dread_shift_v8_5_1_patch\.js && node dread_shift_v8_5_2_patch\.js && node db_bridge\.js$/);
 });
 
 test("notification bell stays in the top-right corner",()=>{
   const patch=fs.readFileSync(path.join(root,"dread_shift_v8_4_patch.js"),"utf8");
   assert.match(patch,/\.notification-bell\{top:14px!important;right:14px!important\}/);
   assert.match(patch,/\.notification-center\{top:68px!important;right:14px!important\}/);
+});
+
+test("v8.5.2 fixes every weapon label and restricts QA admin to cattencel",()=>{
+  const patch=fs.readFileSync(path.join(root,"dread_shift_v8_5_2_patch.js"),"utf8");
+  const pkg=require(path.join(root,"package.json"));
+  assert.equal(pkg.version,"8.5.2");
+  assert.match(patch,/\.weapon-slot \.slot-name/);
+  assert.match(patch,/-webkit-line-clamp:2/);
+  assert.match(patch,/===\"cattencel\"/);
+  assert.match(patch,/qaAdminEnabled:isQaAdmin\(p\)/);
+  assert.doesNotMatch(patch,/new WebSocket|function connect\(|resumeSession|authRequired/);
 });
