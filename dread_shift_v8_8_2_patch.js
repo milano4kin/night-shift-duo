@@ -20,7 +20,7 @@ function patchServer(){
   );
   const socialRe=/      if\(m\.type==="accountFriendAdd"\)\{[\s\S]*?(?=      if\(m\.type==="metaCosmeticBuy"\))/;
   must(socialRe.test(s),"old friend handlers not found");
-  const block=`      if(m.type==="accountFriendSync"){v882Social(account);saveAccounts();}
+  const block=`      if(m.type==="accountFriendSync"){v882Social(account);}
       if(m.type==="accountFriendAdd"){
         const u=cleanUsername(m.username),f=accounts[u];v882Social(account);
         if(!f||u===account.username){send(ws,"notice",{text:"Игрок не найден"});return;}
