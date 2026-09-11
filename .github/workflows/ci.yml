@@ -14,38 +14,17 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+      - name: Install build dependencies
+        run: npm install --omit=dev --no-audit --no-fund
       - name: Static patch syntax
         run: |
           node --check dread_shift_v8_8_patch.js
           node --check dread_shift_v8_8_1_patch.js
-      - name: Apply legacy patch chain through v8.7.2
-        run: |
-          node auth_policy_patch.js
-          node hud_layout_patch.js
-          node network_smoothing_patch.js
-          node copy_polish_patch.js
-          node lobby_tools_patch.js
-          node lobby_visibility_patch.js
-          node lobby_layer_patch.js
-          node dread_shift_overhaul_patch.js
-          node dread_shift_v8_2_patch.js
-          node dread_shift_v8_3_patch.js
-          node dread_shift_v8_4_patch.js
-          node dread_shift_v8_5_1_patch.js
-          node dread_shift_v8_5_2_patch.js
-          node dread_shift_v8_5_3_patch.js
-          node dread_shift_v8_5_4_patch.js
-          node dread_shift_v8_6_patch.js
-          node dread_shift_v8_6_1_patch.js
-          node dread_shift_v8_6_2_patch.js
-          node dread_shift_v8_6_3_patch.js
-          node dread_shift_v8_7_patch.js
-          node dread_shift_v8_7_1_patch.js
-          node dread_shift_v8_7_2_patch.js
-      - name: Apply v8.8 feature patch
-        run: node dread_shift_v8_8_patch.js
-      - name: Apply v8.8.1 hotfix
-        run: node dread_shift_v8_8_1_patch.js
+          node --check scripts/protect_client.js
+          cp v88_client_extension.jsfrag /tmp/v88_client_extension.js
+          node --check /tmp/v88_client_extension.js
+      - name: Apply full runtime patch chain
+        run: npm run patch:runtime
       - name: Validate patched runtime files
         run: |
           node --check server.js
@@ -56,3 +35,17 @@ jobs:
         run: node --test tests/movement_patch.test.js
       - name: v8.8 feature tests
         run: node --test tests/v8_8_patch.test.js
+      - name: Protect production browser client
+        run: node scripts/protect_client.js
+      - name: Validate production protection
+        shell: bash
+        run: |
+          test ! -f public/client.js
+          grep -Eq '<script src="assets/game\.[a-f0-9]{12}\.min\.js"></script>' public/index.html
+          BUNDLE="$(grep -Eo 'assets/game\.[a-f0-9]{12}\.min\.js' public/index.html | head -n1)"
+          test -n "$BUNDLE"
+          test -f "public/$BUNDLE"
+          node --check "public/$BUNDLE"
+          test ! -f "public/$BUNDLE.map"
+          ! grep -q 'sourceMappingURL' "public/$BUNDLE"
+          grep -q 'PROD_CLIENT_GUARD' server.js
