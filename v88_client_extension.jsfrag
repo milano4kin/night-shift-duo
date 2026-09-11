@@ -1,0 +1,61 @@
+const v88A=()=>metaState?.account||accountState||{},v88C=()=>metaState?.cosmeticsCatalog||{};
+function v88Date(x){const d=new Date(x);return !x||Number.isNaN(d.getTime())?T("дата не сохранена","date not saved"):d.toLocaleString(isEn()?"en-GB":"ru-RU",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"})}
+function v88Perks(l){l=Number(l)||1;return {hp:(l>=2?5:0)+(l>=6?5:0)+(l>=10?10:0),speed:(l>=4?2:0)+(l>=8?2:0)+(l>=10?2:0)}}
+const v88FeatureUnlocked=featureUnlocked;
+featureUnlocked=mode=>mode==="cosmetics"||mode==="friends"||v88FeatureUnlocked(mode);
+function v88Cos(){
+  const m=metaState||{},own=new Set(m.cosmeticsOwned||[]),eq=m.equippedCosmetics||{};
+  const cards=slot=>Object.values(v88C()).filter(x=>x.slot===slot).map(x=>`<article class="v88-card ${x.rarity}"><b>${x.name}</b><small>${String(x.rarity).toUpperCase()} · ${x.currency==="gold"?"G":"◉"} ${x.price}</small>${own.has(x.id)?`<button data-v88-e="${x.id}" data-slot="${slot}" ${eq[slot]===x.id?"disabled":""}>${eq[slot]===x.id?T("ЭКИПИРОВАНО","EQUIPPED"):T("ЭКИПИРОВАТЬ","EQUIP")}</button>`:`<button data-v88-b="${x.id}">${T("КУПИТЬ","BUY")}</button>`}</article>`).join("");
+  lobbyMetaContent.innerHTML=`<p>${T("Скины не влияют на характеристики.","Skins do not affect stats.")}</p><h3>${T("ОРУЖИЕ","WEAPONS")}</h3><div class="v88-grid">${cards("weapon")}</div><button data-v88-clear="weapon">${T("Снять скин оружия","Remove weapon skin")}</button><h3>${T("ПЕРСОНАЖ","CHARACTER")}</h3><div class="v88-grid">${cards("character")}</div><button data-v88-clear="character">${T("Снять скин персонажа","Remove character skin")}</button>`;
+}
+function v88Av(a){return a.avatar?`<img class="v88-av" src="${a.avatar}" alt="">`:`<i class="v88-av">${String(a.displayName||a.username||"?")[0]}</i>`}
+function v88Friends(){
+  const a=v88A(),friends=a.friends||[];
+  lobbyMetaContent.innerHTML=`<section class="v88-profile">${v88Av(a)}<div><b>${a.displayName||a.username||"Player"}</b><small>@${a.username||"-"} · LVL ${a.accountLevel||1}</small><label>${T("Загрузить аватар","Upload avatar")}<input id="v88Avatar" type="file" accept="image/png,image/jpeg,image/webp" hidden></label><button data-v88-reset>${T("Сбросить","Reset")}</button></div></section><div class="v88-add"><input id="v88Friend" placeholder="${T("Логин друга","Friend username")}"><button data-v88-add>${T("Добавить","Add")}</button></div>${friends.map(x=>`<article class="v88-friend">${v88Av(x)}<div><b>${x.displayName}</b><small>@${x.username} · LVL ${x.accountLevel||1}</small></div><button data-v88-rm="${x.username}">×</button></article>`).join("")||`<p>${T("Друзей пока нет","No friends yet")}</p>`}`;
+}
+const v88RenderLobbyMeta=renderLobbyMeta;
+renderLobbyMeta=function(){
+  if(lobbyMetaMode==="cosmetics"){renderMetaWallet();lobbyMetaTitle.textContent=T("Косметика","Cosmetics");v88Cos();return}
+  if(lobbyMetaMode==="friends"){renderMetaWallet();lobbyMetaTitle.textContent=T("Профиль и друзья","Profile & friends");v88Friends();return}
+  v88RenderLobbyMeta();
+  if(lobbyMetaMode==="history"){
+    const hist=metaState?.runHistory||[];
+    [...lobbyMetaContent.querySelectorAll(".meta-card")].forEach((card,index)=>{if(hist[index]&&!card.querySelector(".v88-date"))card.insertAdjacentHTML("afterbegin",`<div class="v88-date">🗓 ${v88Date(hist[index].date)}</div>`)})
+  }
+  if(lobbyMetaMode==="upgrades"){
+    const level=v88A().accountLevel||1,perk=v88Perks(level);
+    lobbyMetaContent.insertAdjacentHTML("afterbegin",`<section class="v88-level"><b>${T("Бонусы уровня аккаунта","Account level perks")} · LVL ${level}</b><span>+${perk.hp} HP · +${perk.speed}% ${T("скорости","speed")}</span><small>LVL 2 +5 HP · LVL 4 +2% SPEED · LVL 6 +5 HP · LVL 8 +2% SPEED · LVL 10 +10 HP/+2% SPEED</small></section>`)
+  }
+};
+const v88Nav=$("lobbyMetaNav");
+for(const [mode,icon,name,sub] of [["cosmetics","🎨",T("Косметика","Cosmetics"),T("скины","skins")],["friends","👥",T("Друзья","Friends"),T("аватар и друзья","avatar & friends")]]){
+  if(v88Nav&&!v88Nav.querySelector(`[data-lobby-pane="${mode}"]`)){const b=document.createElement("button");b.dataset.lobbyPane=mode;b.type="button";b.innerHTML=`${icon} <b>${name}</b><small>${sub}</small>`;v88Nav.append(b)}
+}
+lobbyMetaContent.addEventListener("click",e=>{
+  let b=e.target.closest("[data-v88-b]");if(b){send("metaCosmeticBuy",{id:b.dataset.v88B});return}
+  b=e.target.closest("[data-v88-e]");if(b){send("metaCosmeticEquip",{id:b.dataset.v88E,slot:b.dataset.slot});return}
+  b=e.target.closest("[data-v88-clear]");if(b){send("metaCosmeticEquip",{id:"",slot:b.dataset.v88Clear});return}
+  if(e.target.closest("[data-v88-reset]")){send("accountSetAvatar",{avatar:""});return}
+  if(e.target.closest("[data-v88-add]")){const username=$("v88Friend")?.value.trim();if(username)send("accountFriendAdd",{username});return}
+  b=e.target.closest("[data-v88-rm]");if(b)send("accountFriendRemove",{username:b.dataset.v88Rm})
+});
+lobbyMetaContent.addEventListener("change",e=>{
+  if(e.target.id!=="v88Avatar")return;
+  const file=e.target.files?.[0];
+  if(!file||file.size>4*1024*1024){toast(T("Аватар должен быть меньше 4 МБ","Avatar must be under 4 MB"));return}
+  const reader=new FileReader();reader.onload=()=>{const img=new Image();img.onload=()=>{const c=document.createElement("canvas"),x=c.getContext("2d");c.width=c.height=128;const q=Math.max(128/img.width,128/img.height),w=img.width*q,h=img.height*q;x.drawImage(img,(128-w)/2,(128-h)/2,w,h);send("accountSetAvatar",{avatar:c.toDataURL("image/webp",.78)})};img.src=reader.result};reader.readAsDataURL(file)
+});
+if(typeof settings.autoSkip!=="boolean")settings.autoSkip=false;
+const v88AdminRow=$("settingAdminVisible")?.closest("label");
+if(v88AdminRow&&!$("settingAutoSkip")){
+  const row=document.createElement("label");row.className="setting-row checkbox-row";row.innerHTML=`<span>${T("Автоскип волн","Auto-skip waves")}</span><input id="settingAutoSkip" type="checkbox">`;v88AdminRow.before(row);$("settingAutoSkip").checked=settings.autoSkip;$("settingAutoSkip").onchange=e=>{settings.autoSkip=e.target.checked;saveSettings()}
+}
+let v88SkippedWave="";
+setInterval(()=>{const p=myPlayer();if(!settings.autoSkip||!state?.started||!p||p.id!==state.hostId||state.phase!=="day"){v88SkippedWave="";return}if((state.zombies||[]).some(z=>z.hp>0))return;const key=`${state.wave}:day`;if(key!==v88SkippedWave){v88SkippedWave=key;send("skipPrep")}},500);
+setInterval(()=>{const p=myPlayer();if(!state?.started||!p||!state.core)return;if(Math.hypot(p.x-state.core.x,p.y-state.core.y)>=RUN_SHOP_RADIUS){if(runShopOverlay.classList.contains("visible"))closeRunShop();if(runUpgradeOverlay.classList.contains("visible"))closeRunUpgrade()}},180);
+const v88WhatsNew=$("openWhatsNewBtn"),v88Bell=$("notificationBell"),v88Center=$("notificationCenter");
+if(v88WhatsNew){v88WhatsNew.classList.add("v88-whats");(v88Center||v88Bell?.parentElement)?.prepend(v88WhatsNew)}
+const v88DrawWeapon=drawHeldWeaponSprite;
+drawHeldWeaponSprite=function(p,s,a){ctx.save();ctx.filter=v88C()[p?.cosmetics?.weapon||(p?.id===myId?metaState?.equippedCosmetics?.weapon:null)]?.filter||"none";v88DrawWeapon(p,s,a);ctx.restore()};
+const v88DrawPlayer=drawPlayer;
+drawPlayer=function(p){ctx.save();ctx.filter=v88C()[p?.cosmetics?.character||(p?.id===myId?metaState?.equippedCosmetics?.character:null)]?.filter||"none";v88DrawPlayer(p);ctx.restore()};
