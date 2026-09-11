@@ -18,8 +18,6 @@ jobs:
         run: |
           node --check dread_shift_v8_8_patch.js
           node --check dread_shift_v8_8_1_patch.js
-      - name: Existing tests
-        run: npm test
       - name: Apply full runtime patch chain
         run: |
           node auth_policy_patch.js
@@ -50,3 +48,9 @@ jobs:
         run: |
           node --check server.js
           node --check public/client.js
+      - name: Desktop regression tests
+        run: node --test tests/desktop_patch.test.js
+      - name: Movement and release-order tests
+        run: node --test tests/movement_patch.test.js
+      - name: v8.8 feature tests
+        run: node --test tests/v8_8_patch.test.js
