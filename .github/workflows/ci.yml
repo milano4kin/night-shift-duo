@@ -20,6 +20,7 @@ jobs:
         run: |
           node --check dread_shift_v8_8_patch.js
           node --check dread_shift_v8_8_1_patch.js
+          node --check dread_shift_v8_8_2_patch.js
           node --check scripts/protect_client.js
           cp v88_client_extension.jsfrag /tmp/v88_client_extension.js
           node --check /tmp/v88_client_extension.js
