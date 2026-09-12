@@ -33,7 +33,7 @@ test("runtime restores low-jitter local prediction and remote interpolation",()=
 test("v8.9.5 movement recovery remains before the current protected runtime",()=>{
   const pkg=require(path.join(root,"package.json")),protect=read("scripts/protect_client.js");
   assert.equal(pkg.version,"8.9.9");
-  assert.match(pkg.scripts["patch:runtime"],/dread_shift_v8_9_4_patch\.js && node dread_shift_v8_9_5_patch\.js && node dread_shift_v8_9_6_patch\.js && node dread_shift_v8_9_7_patch\.js && node dread_shift_v8_9_8_patch\.js && node dread_shift_v8_9_9_patch\.js && node dread_shift_v8_9_9_1_patch\.js && node dread_shift_v8_9_9_2_patch\.js$/);
+  assert.match(pkg.scripts["patch:runtime"],/dread_shift_v8_9_4_patch\.js && node dread_shift_v8_9_5_patch\.js && node dread_shift_v8_9_6_patch\.js && node dread_shift_v8_9_7_patch\.js && node dread_shift_v8_9_8_patch\.js && node dread_shift_v8_9_9_patch\.js && node dread_shift_v8_9_9_1_patch\.js && node dread_shift_v8_9_9_2_patch\.js && node dread_shift_v8_9_9_3_patch\.js$/);
   assert.match(protect,/DREAD SHIFT v8\.9\.9 client/);
   assert.match(protect,/BUILD_VERSION = "8\.9\.9"/);
 });
