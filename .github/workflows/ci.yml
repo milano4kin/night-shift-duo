@@ -38,6 +38,7 @@ jobs:
           node --check dread_shift_v8_9_9_2_patch.js
           node --check dread_shift_v8_9_9_3_patch.js
           node --check dread_shift_v8_9_9_4_patch.js
+          node --check dread_shift_restore_full_patch.js
           node --check scripts/protect_client.js
           node --check db_bridge.js
           cp v88_client_extension.jsfrag /tmp/v88_client_extension.js
@@ -56,6 +57,14 @@ jobs:
           grep -q 'DREAD SHIFT v8.9.9.3 tower range/wall group' public/client.js
           grep -q 'DREAD SHIFT v8.9.9.3 connected wall upgrades' server.js
           grep -q 'DREAD SHIFT v8.9.9.4 hotbar fit' public/style.css
+          grep -q 'DREAD SHIFT full restore 2026-09-13 server' server.js
+          grep -q 'DREAD SHIFT full restore 2026-09-13 client' public/client.js
+          grep -q 'id="codesOverlay"' public/index.html
+          grep -q 'WELCOME:{display:"Welcome",silver:300,gold:25,crateTokens:1}' server.js
+          grep -q 'room.phaseTimer=30;' server.js
+          grep -q 'requestPath==="/api/auth/register"' server.js
+          grep -q 'RUN_MILESTONE_REWARDS' server.js
+          grep -q 'smoothPets=new Map()' public/client.js
           grep -q 'DREAD SHIFT v8.9.3 db' db_bridge.js
           grep -q '<title>Dread Shift v8.9.9</title>' public/index.html
       - name: Full regression tests
