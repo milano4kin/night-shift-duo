@@ -6,7 +6,7 @@ function must(cond,msg){if(!cond)throw new Error(`[protect-client] ${msg}`)}
 (async()=>{
   must(fs.existsSync(CLIENT),"public/client.js missing before production build");
   const source=fs.readFileSync(CLIENT,"utf8");
-  must(source.includes("DREAD SHIFT v8.8.1 client"),"v8.8.1 client marker missing; patch chain did not finish");
+  must(source.includes("DREAD SHIFT v8.9 client"),"v8.9 client marker missing; release runtime is incomplete");
   const result=await minify(source,{ecma:2022,compress:{passes:3,drop_debugger:true},mangle:{toplevel:true},format:{comments:false,semicolons:true},sourceMap:false});
   must(result&&result.code&&result.code.length>1000,"terser returned an empty bundle");
   new Function(result.code);
@@ -22,9 +22,11 @@ function must(cond,msg){if(!cond)throw new Error(`[protect-client] ${msg}`)}
   fs.rmSync(CLIENT,{force:true});
   let server=fs.readFileSync(SERVER,"utf8");
   if(!server.includes("/* PROD_CLIENT_GUARD */")){
-    const marker='  const requestPath=req.url.split("?")[0];';
-    must(server.includes(marker),"server static request marker not found");
-    server=server.replace(marker,marker+'\n  /* PROD_CLIENT_GUARD */\n  if(requestPath==="/client.js"||requestPath.startsWith("/src/")||requestPath.endsWith(".map")){res.writeHead(404,{"Cache-Control":"no-store","X-Content-Type-Options":"nosniff"});return res.end("Not found");}');
+    const requestPathMarker='  const requestPath=req.url.split("?")[0];';
+    const urlMarker='  let url=req.url.split("?")[0];';
+    must(server.includes(requestPathMarker)||server.includes(urlMarker),"server static request marker not found");
+    if(server.includes(requestPathMarker))server=server.replace(requestPathMarker,requestPathMarker+'\n  /* PROD_CLIENT_GUARD */\n  if(requestPath==="/client.js"||requestPath.startsWith("/src/")||requestPath.endsWith(".map")){res.writeHead(404,{"Cache-Control":"no-store","X-Content-Type-Options":"nosniff"});return res.end("Not found");}');
+    else server=server.replace(urlMarker,urlMarker+'\n  /* PROD_CLIENT_GUARD */\n  if(url==="/client.js"||url.startsWith("/src/")||url.endsWith(".map")){res.writeHead(404,{"Cache-Control":"no-store","X-Content-Type-Options":"nosniff"});return res.end("Not found");}');
     fs.writeFileSync(SERVER,server,"utf8");
   }
   must(!fs.existsSync(CLIENT),"readable client.js still exists in public");

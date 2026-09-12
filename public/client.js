@@ -1,3 +1,4 @@
+/* DREAD SHIFT v8.9 client */
 // legacy QA markers exact:
 // 950 27px system-ui
 // 950 15px system-ui
@@ -184,7 +185,7 @@ const gameRail=$("gameRail"),combatLogPanel=$("combatLogPanel");
 const bossLootPanel=$("bossLootPanel"),bossLootTitle=$("bossLootTitle"),bossLootSubtitle=$("bossLootSubtitle"),bossLootItems=$("bossLootItems"),bossLootFoot=$("bossLootFoot");
 
 let ws,myId=null,state=null,connected=false,joined=false,character="starter",noticeTimer,isHost=false,roomMode=null,accountState=null,guideStep=0;
-let selectedBuild=null,buildRotation=0,lastHarvest=0,activeTool="gun",pendingClassUnlock=null,selectedStructureId=null,structureInfoExpanded=false,structureDeleteArmed=false;
+let selectedBuild=null,buildRotation=0,wallSnapEnabled=true,lastHarvest=0,activeTool="gun",pendingClassUnlock=null,selectedStructureId=null,structureInfoExpanded=false,structureDeleteArmed=false;
 let lobbyMetaMode="shop",pauseOpen=false,activeCrateAnimation=null,lastMoveFootstep=0,lastPhaseSeen="",metaState=null,lastReloading=false;
 let crateSpinLocked=false,crateCurrentResult=null,crateRevealTimer=null,serverPaused=false,runShopRenderSig="",pendingRunBuy=null,runUpgradeRenderSig="",pendingRunUpgrade=null,runUpgradeTab="weapon";
 let bossLootHideTimer=null;
@@ -615,6 +616,20 @@ function send(type,data={}){if(ws&&ws.readyState===1)ws.send(JSON.stringify({typ
 function toast(text){
   notice.textContent=text;notice.classList.add("visible");
   clearTimeout(noticeTimer);noticeTimer=setTimeout(()=>notice.classList.remove("visible"),1800);
+}
+function showLevelUp(m){
+  const gained=Math.max(1,Number(m.levelsGained)||1);
+  notice.textContent=T(`⬆ УРОВЕНЬ ${m.level}! +${gained} очко навыка`,`⬆ LEVEL ${m.level}! +${gained} skill point`);
+  notice.classList.add("visible","level-up");
+  clearTimeout(noticeTimer);noticeTimer=setTimeout(()=>notice.classList.remove("visible","level-up"),3800);
+  talentDock?.classList.add("attention");playSfx("coin");
+}
+function updateMetaAttention(){
+  const quests=metaState?.quests||[],ach=metaState?.achievements||{};
+  const questReady=quests.some(q=>!q.claimed&&Number(q.progress)>=Number(q.target));
+  const achievementReady=Object.values(ach).some(v=>Number(v)===1);
+  document.querySelector('#lobbyMetaNav [data-lobby-pane="quests"]')?.classList.toggle("attention",questReady);
+  document.querySelector('#lobbyMetaNav [data-lobby-pane="achievements"]')?.classList.toggle("attention",achievementReady);
 }
 function esc(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
 const floorThemes=[
@@ -1113,13 +1128,14 @@ function connect(){
       if(structureMenuOverlay.classList.contains("visible")){const st=selectedStructure(),rp=myPlayer();if(!st||!rp||localDistanceToStructure(rp.x,rp.y,st)>180)closeStructureMenu();else renderStructureMenu();}
     }
     if(m.type==="metaState"){
-      metaState=m.meta;if(m.meta?.account)accountState=m.meta.account;syncAccountUi();renderFeatureLocks();renderMetaWallet();renderClassLocks();
+      metaState=m.meta;if(m.meta?.account)accountState=m.meta.account;syncAccountUi();renderFeatureLocks();renderMetaWallet();renderClassLocks();updateMetaAttention();
       if(pendingClassUnlock&&classIsUnlocked(pendingClassUnlock)){
         character=pendingClassUnlock;document.querySelectorAll(".character").forEach(x=>x.classList.toggle("selected",x.dataset.char===character));toast(T(`Класс открыт: ${classNames[character]}`,`Class unlocked: ${classNames[character]}`));pendingClassUnlock=null;
       }
       if(lobbyMetaOverlay.classList.contains("visible"))renderLobbyMeta();if(petOverlay.classList.contains("visible"))renderPets();if(indexOverlay.classList.contains("visible"))renderIndex();
     }
     if(m.type==="notice"){const line=translateServerText(m.text);toast(line);pushCombatLog(line,"notice");}
+    if(m.type==="levelUp")showLevelUp(m);
     if(m.type==="bossLoot"){showBossLoot(m);pushCombatLog(T(`Добыча с босса: ${m.bossName||"Босс"}`,`Boss loot: ${zombieNamesEn[m.bossType]||m.bossName||"Boss"}`),"loot");}
     if(m.type==="combo")showComboFlash(m);
     if(m.type==="buyResult"){
@@ -1724,7 +1740,13 @@ function updateUnifiedUI(force=false){
         </button>
       </div>`;
     }).join("");
+    talentDock.classList.toggle("attention",p.skillPoints>0);
   }
+
+  const wallMode=isWallBuild(selectedBuild);
+  $("wallBuildHud")?.classList.toggle("hidden",!wallMode);
+  const snapToggle=$("wallSnapToggle");
+  if(snapToggle){snapToggle.setAttribute("aria-pressed",String(wallSnapEnabled));snapToggle.classList.toggle("active",wallSnapEnabled);const label=snapToggle.querySelector("strong");if(label)label.textContent=wallSnapEnabled?T("Магнит: ВКЛ","Snap: ON"):T("Магнит: ВЫКЛ","Snap: OFF");}
 
   document.querySelectorAll(".slot.tool").forEach(b=>b.classList.toggle("selected",!selectedBuild&&b.dataset.tool===activeTool));
   document.querySelectorAll(".slot.build").forEach(b=>b.classList.toggle("selected",b.dataset.build===selectedBuild));
@@ -1803,6 +1825,7 @@ $("talentList").addEventListener("click",e=>{
   const b=e.target.closest("[data-skill]");
   if(b&&!b.disabled)send("skill",{skill:b.dataset.skill});
 });
+$("wallSnapToggle").onclick=()=>{wallSnapEnabled=!wallSnapEnabled;updateUnifiedUI(true);playSfx("ui");};
 
 function selectTool(tool){
   const same=!selectedBuild&&activeTool===tool;
@@ -2032,7 +2055,7 @@ function updateCamera(){
   mouse.wx=mouse.x+camera.x;mouse.wy=mouse.y+camera.y;
 }
 const WALL_HALF_LEN=48;
-const WALL_HALF_THICK=8;
+const WALL_HALF_THICK=13;
 function isWallBuild(type){return type==="wall"||type==="gate"}
 
 function wallEndpointsLocal(x,y,rotation){
@@ -2080,7 +2103,7 @@ function getBuildGhost(p){
     let best=null,bestD=25;
     const dir={x:Math.cos(buildRotation),y:Math.sin(buildRotation)};
 
-    for(const st of state.structures){
+    for(const st of wallSnapEnabled?state.structures:[]){
       if(!isWallBuild(st.type))continue;
       for(const ep of wallEndpointsLocal(st.x,st.y,st.rotation||0)){
         const candidates=[

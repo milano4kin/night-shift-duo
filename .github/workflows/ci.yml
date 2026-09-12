@@ -21,11 +21,12 @@ jobs:
           node --check dread_shift_v8_8_patch.js
           node --check dread_shift_v8_8_1_patch.js
           node --check dread_shift_v8_8_2_patch.js
+          node --check dread_shift_v8_9_patch.js
           node --check scripts/protect_client.js
           cp v88_client_extension.jsfrag /tmp/v88_client_extension.js
           node --check /tmp/v88_client_extension.js
-      - name: Apply full runtime patch chain
-        run: npm run patch:runtime
+      - name: Verify release runtime
+        run: node dread_shift_v8_9_patch.js
       - name: Validate patched runtime files
         run: |
           node --check server.js
@@ -36,6 +37,8 @@ jobs:
         run: node --test tests/movement_patch.test.js
       - name: v8.8 feature tests
         run: node --test tests/v8_8_patch.test.js
+      - name: v8.9 feature tests
+        run: node --test tests/v8_9_patch.test.js
       - name: Protect production browser client
         run: node scripts/protect_client.js
       - name: Validate production protection

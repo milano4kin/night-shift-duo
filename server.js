@@ -1,3 +1,4 @@
+/* DREAD SHIFT v8.9 server */
 const http = require("http");
 const fs = require("fs");
 const path = require("path");
@@ -5,7 +6,7 @@ const crypto = require("crypto");
 const { WebSocketServer } = require("ws");
 
 const PORT = process.env.PORT || 8091;
-const BUILD_VERSION = "8.0.0";
+const BUILD_VERSION = "8.9.0";
 const QA_ADMIN_ENABLED = process.env.NSD_QA_ADMIN === "1" && process.env.NODE_ENV !== "production";
 const WS_MAX_PAYLOAD = 64 * 1024;
 const WS_MAX_MESSAGES_PER_SEC = 180;
@@ -406,7 +407,7 @@ function classDamageMultiplier(p,w){
 
 
 const STRUCTURES = {
-  wall:        { name:"Стена",           cost:{wood:18,stone:4,scrap:0},   hp:340, r:50, halfW:48, halfH:8 },
+  wall:        { name:"Стена",           cost:{wood:18,stone:4,scrap:0},   hp:680, r:50, halfW:48, halfH:13 },
   gate:        { name:"Ворота",          cost:{wood:22,stone:5,scrap:4},   hp:295, r:50, halfW:48, halfH:9 },
   cannon:      { name:"Пушка",           cost:{wood:12,stone:14,scrap:55}, hp:210, r:30, halfW:30, halfH:30 },
   tesla:       { name:"Электро-башня",   cost:{wood:14,stone:10,scrap:60}, hp:175, r:28, halfW:28, halfH:28 },
@@ -844,18 +845,19 @@ function applyStats(p){
 }
 function addXp(p,amount){
   p.xp += amount;
-  let leveled=false;
+  let leveled=false,levelsGained=0;
   while(p.xp>=p.nextXp){
     p.xp -= p.nextXp;
     p.level++;
     p.skillPoints++;
+    levelsGained++;
     p.nextXp = Math.round(p.nextXp*1.22+20);
     leveled=true;
   }
   if(leveled){
     applyStats(p);
     p.hp=p.maxHp;
-    send(p.ws,"notice",{text:`Уровень ${p.level}! Получено очко навыка.`});
+    send(p.ws,"levelUp",{level:p.level,skillPoints:p.skillPoints,levelsGained});
   }
 }
 
@@ -1381,7 +1383,7 @@ function shoot(room,p){
     const a=baseA+rand(-w.spread,w.spread),crit=Math.random()<critChance;
     room.bullets.push({
       id:id(),kind:w.bubble?"bubble":"bullet",weapon:p.weapon.type,rarity:rarityName,
-      x:p.x+Math.cos(a)*29,y:p.y+Math.sin(a)*29,vx:Math.cos(a)*w.speed,vy:Math.sin(a)*w.speed,
+      x:p.x+Math.cos(a)*29,y:p.y+Math.sin(a)*29,prevX:p.x,prevY:p.y,vx:Math.cos(a)*w.speed,vy:Math.sin(a)*w.speed,
       r:w.bubble?9:4,life:w.range/w.speed,damage:w.damage*dmgMult*(crit?critMult:1),owner:p.id,
       pierce:rarityName==="legendary"?2:(rarityName==="rare"||rarityName==="epic"?1:0),chain:rarityName==="legendary"?.30:0,hitIds:[]
     });
@@ -1524,7 +1526,6 @@ function pickupLoot(room,p){
       if(bundle.crateToken>0)receiver.crateTokens=(receiver.crateTokens||0)+bundle.crateToken;
       if(bundle.crateToken>0)saveProgress(receiver);
       send(receiver.ws,'bossLoot',{bossName:target.bossName||"Босс",bossType:target.bossType||"boss",items:bundle.items||[]});
-      send(receiver.ws,"notice",{text:`🎁 Командная добыча с босса: ${parts.join(', ')}`});
     }
   }
   room.loot=room.loot.filter(x=>x.id!==target.id);
@@ -1532,7 +1533,7 @@ function pickupLoot(room,p){
 }
 
 const WALL_HALF_LEN=48;
-const WALL_HALF_THICK=8;
+const WALL_HALF_THICK=13;
 
 function isWallType(type){return type==="wall"||type==="gate"}
 
@@ -2255,11 +2256,12 @@ function updateRoom(room,dt){
   for(let i=room.bullets.length-1;i>=0;i--){
     const b=room.bullets[i];b.life-=dt;
     if(b.kind==="meleeFx"){if(b.life<=0)room.bullets.splice(i,1);continue;}
-    b.x+=b.vx*dt;b.y+=b.vy*dt;b.hitIds=b.hitIds||[];
+    const bulletFromX=Number.isFinite(b.prevX)?b.prevX:b.x,bulletFromY=Number.isFinite(b.prevY)?b.prevY:b.y;
+    b.x+=b.vx*dt;b.y+=b.vy*dt;b.prevX=b.x;b.prevY=b.y;b.hitIds=b.hitIds||[];
     let remove=false;
     for(const z of room.zombies){
       if(b.hitIds.includes(z.id))continue;
-      if(Math.hypot(z.x-b.x,z.y-b.y)>=z.r+b.r)continue;
+      if(pointSegmentDistance(z.x,z.y,bulletFromX,bulletFromY,b.x,b.y)>=z.r+b.r)continue;
       const dealt=damageZombie(z,b.damage,"ranged");z.lastHit=b.owner;b.hitIds.push(z.id);
       const owner=[...room.players.values()].find(pp=>pp.id===b.owner);if(owner)owner.runStats.damage=(owner.runStats.damage||0)+dealt;
       if(b.kind==="frostTower"){z.slow=Math.max(z.slow,b.slowTime||1.4);addEffect(room,{type:"towerFrostHit",x:z.x,y:z.y,r:38,life:.24});}
