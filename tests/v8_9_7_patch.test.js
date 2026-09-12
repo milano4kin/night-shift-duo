@@ -31,5 +31,5 @@ test("all seven upgrades have authoritative gameplay effects and use silver in t
 test("v8.9.7 remains before the current v8.9.9 release",()=>{
   const pkg=require(path.join(root,"package.json"));
   assert.equal(pkg.version,"8.9.9");
-  assert.match(pkg.scripts["patch:runtime"],/dread_shift_v8_9_6_patch\.js && node dread_shift_v8_9_7_patch\.js && node dread_shift_v8_9_8_patch\.js && node dread_shift_v8_9_9_patch\.js && node dread_shift_v8_9_9_1_patch\.js$/);
+  assert.match(pkg.scripts["patch:runtime"],/dread_shift_v8_9_6_patch\.js && node dread_shift_v8_9_7_patch\.js && node dread_shift_v8_9_8_patch\.js && node dread_shift_v8_9_9_patch\.js && node dread_shift_v8_9_9_1_patch\.js && node dread_shift_v8_9_9_2_patch\.js$/);
 });
