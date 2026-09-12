@@ -12,10 +12,12 @@ test("v8.9 uses swept bullet collision for point-blank targets",()=>{
   assert.match(server,/prevX:p\.x,prevY:p\.y/);
   assert.match(server,/pointSegmentDistance\(z\.x,z\.y,bulletFromX,bulletFromY,b\.x,b\.y\)/);
 });
-test("v8.9 shows claim and skill-point attention",()=>{
+test("v8.9 shows claim and only-upgradeable talent attention",()=>{
   const client=read("public/client.js"),html=read("public/index.html"),css=read("public/style.css");
   assert.match(client,/updateMetaAttention/);assert.match(client,/questReady/);assert.match(client,/achievementReady/);
-  assert.match(client,/showLevelUp/);assert.match(client,/talentDock\.classList\.toggle\("attention",p\.skillPoints>0\)/);
+  assert.match(client,/showLevelUp/);assert.match(client,/function v899CanUpgradeTalent\(p\)/);
+  assert.match(client,/Object\.entries\(talentDefs\).*cfg\.max/s);
+  assert.match(client,/talentDock\.classList\.toggle\("attention",v899CanUpgradeTalent\(p\)\)/);
   assert.match(html,/wallSnapToggle/);assert.match(css,/\.attention::after/);
 });
 test("v8.9 doubles wall durability and tightens placement",()=>{
@@ -29,6 +31,7 @@ test("canonical runtime restores cosmetics and friend requests before later patc
   const pkg=require(path.join(root,"package.json"));
   assert.match(pkg.scripts["patch:runtime"],/restore:social/);
   assert.match(pkg.scripts["restore:social"],/restore_social\.js/);
+  assert.match(pkg.scripts["patch:runtime"],/dread_shift_v8_9_9_patch\.js && node dread_shift_v8_9_9_1_patch\.js$/);
   assert.equal(pkg.scripts["build:prod"],"npm run patch:runtime && node scripts/protect_client.js");
   const restore=read("scripts/restore_social.js");
   assert.match(restore,/dread_shift_v8_8_patch\.js.*dread_shift_v8_8_1_patch\.js.*dread_shift_v8_8_2_patch\.js/s);
