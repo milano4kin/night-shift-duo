@@ -24,7 +24,7 @@ test("tower prices stay visible and dynamically refreshed",()=>{
   }
 });
 
-test("wall HUD polish remains last in the canonical runtime chain",()=>{
+test("wall HUD polish remains before tower range and wall group patch",()=>{
   const pkg=require(path.join(root,"package.json"));
-  assert.match(pkg.scripts["patch:runtime"],/dread_shift_v8_9_9_1_patch\.js && node dread_shift_v8_9_9_2_patch\.js$/);
+  assert.match(pkg.scripts["patch:runtime"],/dread_shift_v8_9_9_1_patch\.js && node dread_shift_v8_9_9_2_patch\.js && node dread_shift_v8_9_9_3_patch\.js$/);
 });
