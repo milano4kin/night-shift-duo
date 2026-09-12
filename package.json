@@ -10,7 +10,7 @@
     "build:prod": "npm run patch:runtime && node scripts/protect_client.js",
     "start": "npm run patch:runtime && node db_bridge.js",
     "start:prod": "node db_bridge.js",
-    "start:legacy": "node server.js",
+    "start:legacy": "npm run patch:runtime && node server.js",
     "test": "node --test tests/*.test.js"
   },
   "dependencies": {
