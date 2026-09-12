@@ -15,8 +15,8 @@ test("v8.9.6 renders a seamless joint only for connected angled walls",()=>{
   assert.doesNotThrow(()=>new Function(client));
 });
 
-test("v8.9.6 is included in the canonical production patch chain",()=>{
+test("v8.9.6 wall corners remain before the current production patch",()=>{
   const pkg=require(path.join(root,"package.json"));
-  assert.equal(pkg.version,"8.9.6");
-  assert.match(pkg.scripts["patch:runtime"],/dread_shift_v8_9_5_patch\.js && node dread_shift_v8_9_6_patch\.js$/);
+  assert.equal(pkg.version,"8.9.7");
+  assert.match(pkg.scripts["patch:runtime"],/dread_shift_v8_9_5_patch\.js && node dread_shift_v8_9_6_patch\.js && node dread_shift_v8_9_7_patch\.js$/);
 });

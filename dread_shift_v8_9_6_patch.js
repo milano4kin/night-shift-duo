@@ -59,7 +59,7 @@ function patchClient(){
 function patchHtml(){let s=R("public/index.html");if(s.includes("<!-- DREAD SHIFT v8.9.6 -->"))return false;s=s.replaceAll("V8.9.5","V8.9.6").replaceAll("v8.9.5","v8.9.6");s+='\n<!-- DREAD SHIFT v8.9.6 -->\n';W("public/index.html",s);return true;}
 const changed={server:patchServer(),client:patchClient(),html:patchHtml()};
 const server=R("server.js"),client=R("public/client.js");
-must(server.includes('const BUILD_VERSION = "8.9.6";'),"server version missing");
+must(server.includes("/* DREAD SHIFT v8.9.6 server */"),"server marker missing");
 must(client.includes("function drawWallCornerJoints()"),"wall corner renderer missing");
 must(client.includes("angleDot>.985"),"straight joint guard missing");
 console.log("DREAD SHIFT v8.9.6 wall corner patch applied:",changed);

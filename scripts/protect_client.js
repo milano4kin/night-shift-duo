@@ -6,7 +6,7 @@ function must(cond,msg){if(!cond)throw new Error(`[protect-client] ${msg}`)}
 (async()=>{
   must(fs.existsSync(CLIENT),"public/client.js missing before production build");
   const source=fs.readFileSync(CLIENT,"utf8");
-  must(source.includes("DREAD SHIFT v8.9.6 client"),"v8.9.6 client marker missing; audited release runtime is incomplete");
+  must(source.includes("DREAD SHIFT v8.9.7 client"),"v8.9.7 client marker missing; audited release runtime is incomplete");
   must(source.includes("scheduleReconnect"),"reconnect recovery missing from production client");
   const result=await minify(source,{ecma:2022,compress:{passes:3,drop_debugger:true},mangle:{toplevel:true},format:{comments:false,semicolons:true},sourceMap:false});
   must(result&&result.code&&result.code.length>1000,"terser returned an empty bundle");
@@ -22,7 +22,7 @@ function must(cond,msg){if(!cond)throw new Error(`[protect-client] ${msg}`)}
   fs.writeFileSync(INDEX,html,"utf8");
   fs.rmSync(CLIENT,{force:true});
   let server=fs.readFileSync(SERVER,"utf8");
-  must(server.includes('const BUILD_VERSION = "8.9.6";'),"v8.9.6 server marker missing before production protection");
+  must(server.includes('const BUILD_VERSION = "8.9.7";'),"v8.9.7 server marker missing before production protection");
   if(!server.includes("/* PROD_CLIENT_GUARD */")){
     const requestPathMarker='  const requestPath=req.url.split("?")[0];';
     const urlMarker='  let url=req.url.split("?")[0];';
