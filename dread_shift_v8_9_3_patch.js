@@ -51,7 +51,7 @@ function patchHtml(){let s=R("public/index.html");if(s.includes("<!-- DREAD SHIF
 function patchCss(){let s=R("public/style.css");if(s.includes("/* DREAD SHIFT v8.9.3 audit */"))return false;s+='\n/* DREAD SHIFT v8.9.3 audit */\n';W("public/style.css",s);return true;}
 
 function patchDbBridge(){
-  let s=R("db_bridge.js");if(s.includes("/* DREAD SHIFT v8.9.3 db */"))return false;
+  let s=R("db_bridge.js").replace(/\r\n/g,"\n");if(s.includes("/* DREAD SHIFT v8.9.3 db */"))return false;
   s=replaceOnce(s,'  let syncingAll = false;','  let syncPromise = null;',"db sync state");
   const oldSync=`  async function syncAll() {\n    if (syncingAll) return;\n    syncingAll = true;\n    try {\n      for (const name of listSaveFiles()) await persistFile(name);\n    } finally {\n      syncingAll = false;\n    }\n  }`;
   const newSync=`  function syncAll() {\n    if (syncPromise) return syncPromise;\n    syncPromise = (async () => {\n      try {\n        for (const name of listSaveFiles()) await persistFile(name);\n      } finally {\n        syncPromise = null;\n      }\n    })();\n    return syncPromise;\n  }`;

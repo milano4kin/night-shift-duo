@@ -30,10 +30,10 @@ test("runtime restores low-jitter local prediction and remote interpolation",()=
   assert.doesNotMatch(client,/const correction=err>140\?1:\.18/);
 });
 
-test("v8.9.5 is the protected canonical runtime after reconnect recovery",()=>{
+test("v8.9.5 movement recovery remains before the current protected runtime",()=>{
   const pkg=require(path.join(root,"package.json")),protect=read("scripts/protect_client.js");
-  assert.equal(pkg.version,"8.9.5");
-  assert.match(pkg.scripts["patch:runtime"],/dread_shift_v8_9_4_patch\.js && node dread_shift_v8_9_5_patch\.js$/);
-  assert.match(protect,/DREAD SHIFT v8\.9\.5 client/);
-  assert.match(protect,/BUILD_VERSION = "8\.9\.5"/);
+  assert.equal(pkg.version,"8.9.6");
+  assert.match(pkg.scripts["patch:runtime"],/dread_shift_v8_9_4_patch\.js && node dread_shift_v8_9_5_patch\.js && node dread_shift_v8_9_6_patch\.js$/);
+  assert.match(protect,/DREAD SHIFT v8\.9\.6 client/);
+  assert.match(protect,/BUILD_VERSION = "8\.9\.6"/);
 });
