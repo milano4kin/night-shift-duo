@@ -18,18 +18,18 @@ test("v8.9.7 restores the exact seven permanent upgrade branches",()=>{
   assert.match(server,/return lvl\?cfg\.bonuses\[lvl-1\]:0/);
 });
 
-test("all seven upgrades have authoritative gameplay effects and cost gold",()=>{
+test("all seven upgrades have authoritative gameplay effects and use silver in the current runtime",()=>{
   const server=read("server.js"),client=read("public/client.js");
   for(const key of ["damage","reload","health","speed","magazine","gather","building"])
     assert.match(server,new RegExp(`metaUpgradeBonus\\(p,"${key}"\\)`));
-  assert.match(server,/if\(target\.gold<price\)return false;\s*target\.gold-=price/);
-  assert.match(client,/price-gold/);
-  assert.match(client,/m\.gold<price/);
+  assert.match(server,/if\(target\.silver<price\)return false;\s*target\.silver-=price/);
+  assert.match(client,/price-silver/);
+  assert.match(client,/m\.silver<price/);
   assert.match(client,/upgrade-step/);
 });
 
-test("v8.9.7 remains after wall corners and before v8.9.8",()=>{
+test("v8.9.7 remains before the current v8.9.9 release",()=>{
   const pkg=require(path.join(root,"package.json"));
-  assert.equal(pkg.version,"8.9.8");
-  assert.match(pkg.scripts["patch:runtime"],/dread_shift_v8_9_6_patch\.js && node dread_shift_v8_9_7_patch\.js && node dread_shift_v8_9_8_patch\.js$/);
+  assert.equal(pkg.version,"8.9.9");
+  assert.match(pkg.scripts["patch:runtime"],/dread_shift_v8_9_6_patch\.js && node dread_shift_v8_9_7_patch\.js && node dread_shift_v8_9_8_patch\.js && node dread_shift_v8_9_9_patch\.js && node dread_shift_v8_9_9_1_patch\.js$/);
 });
