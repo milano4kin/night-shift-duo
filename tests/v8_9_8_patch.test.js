@@ -27,12 +27,12 @@ test("upgrade cards show current bonus and the exact next tier",()=>{
   assert.doesNotThrow(()=>new Function(client));
 });
 
-test("v8.9.8 is the protected production release",()=>{
+test("v8.9.9 is the protected production release",()=>{
   const pkg=require(path.join(root,"package.json")),lock=require(path.join(root,"package-lock.json")),protect=read("scripts/protect_client.js");
-  assert.equal(pkg.version,"8.9.8");
-  assert.equal(lock.version,"8.9.8");
-  assert.equal(lock.packages[""].version,"8.9.8");
-  assert.match(pkg.scripts["patch:runtime"],/dread_shift_v8_9_7_patch\.js && node dread_shift_v8_9_8_patch\.js$/);
-  assert.match(protect,/DREAD SHIFT v8\.9\.8 client/);
-  assert.match(protect,/BUILD_VERSION = "8\.9\.8"/);
+  assert.equal(pkg.version,"8.9.9");
+  assert.equal(lock.version,"8.9.9");
+  assert.equal(lock.packages[""].version,"8.9.9");
+  assert.match(pkg.scripts["patch:runtime"],/dread_shift_v8_9_7_patch\.js && node dread_shift_v8_9_8_patch\.js && node dread_shift_v8_9_9_patch\.js && node dread_shift_v8_9_9_1_patch\.js$/);
+  assert.match(protect,/DREAD SHIFT v8\.9\.9 client/);
+  assert.match(protect,/BUILD_VERSION = "8\.9\.9"/);
 });
