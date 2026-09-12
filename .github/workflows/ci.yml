@@ -23,25 +23,23 @@ jobs:
           node --check dread_shift_v8_8_2_patch.js
           node --check dread_shift_v8_9_patch.js
           node --check dread_shift_v8_9_2_patch.js
+          node --check dread_shift_v8_9_3_patch.js
           node --check scripts/protect_client.js
+          node --check db_bridge.js
           cp v88_client_extension.jsfrag /tmp/v88_client_extension.js
           node --check /tmp/v88_client_extension.js
-      - name: Verify release runtime
-        run: npm run restore:social && node dread_shift_v8_9_patch.js && node dread_shift_v8_9_2_patch.js
+      - name: Apply canonical audited runtime
+        run: npm run patch:runtime
       - name: Validate patched runtime files
         run: |
           node --check server.js
           node --check public/client.js
-      - name: Desktop regression tests
-        run: node --test tests/desktop_patch.test.js
-      - name: Movement and release-order tests
-        run: node --test tests/movement_patch.test.js
-      - name: v8.8 feature tests
-        run: node --test tests/v8_8_patch.test.js
-      - name: v8.9 feature tests
-        run: node --test tests/v8_9_patch.test.js
-      - name: v8.9.2 feature tests
-        run: node --test tests/v8_9_2_patch.test.js
+          node --check db_bridge.js
+          grep -q 'const BUILD_VERSION = "8.9.3"' server.js
+          grep -q 'DREAD SHIFT v8.9.3 client' public/client.js
+          grep -q 'DREAD SHIFT v8.9.3 db' db_bridge.js
+      - name: Full regression tests
+        run: npm test
       - name: Protect production browser client
         run: node scripts/protect_client.js
       - name: Validate production protection
@@ -56,3 +54,4 @@ jobs:
           test ! -f "public/$BUNDLE.map"
           ! grep -q 'sourceMappingURL' "public/$BUNDLE"
           grep -q 'PROD_CLIENT_GUARD' server.js
+          grep -q 'const BUILD_VERSION = "8.9.3"' server.js
