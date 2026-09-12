@@ -2,7 +2,7 @@ name: Dread Shift CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, "restore/**"]
   workflow_dispatch:
 
 jobs:
