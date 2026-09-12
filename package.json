@@ -1,14 +1,14 @@
 {
   "name": "dread-shift",
-  "version": "8.9.1",
+  "version": "8.9.2",
   "private": true,
-  "description": "DREAD SHIFT v8.9.1 restores the talent dock and improves wall snapping with a T hotkey while keeping the protected production client build.",
+  "description": "DREAD SHIFT v8.9.2 cleans up the in-run resource HUD and replaces placeholder character filters with dedicated skin rendering.",
   "main": "db_bridge.js",
   "scripts": {
     "patch:runtime": "node auth_policy_patch.js && node hud_layout_patch.js && node network_smoothing_patch.js && node copy_polish_patch.js && node lobby_tools_patch.js && node lobby_visibility_patch.js && node lobby_layer_patch.js && node dread_shift_overhaul_patch.js && node dread_shift_v8_2_patch.js && node dread_shift_v8_3_patch.js && node dread_shift_v8_4_patch.js && node dread_shift_v8_5_1_patch.js && node dread_shift_v8_5_2_patch.js && node dread_shift_v8_5_3_patch.js && node dread_shift_v8_5_4_patch.js && node dread_shift_v8_6_patch.js && node dread_shift_v8_6_1_patch.js && node dread_shift_v8_6_2_patch.js && node dread_shift_v8_6_3_patch.js && node dread_shift_v8_7_patch.js && node dread_shift_v8_7_1_patch.js && node dread_shift_v8_7_2_patch.js && node dread_shift_v8_8_patch.js && node dread_shift_v8_8_1_patch.js && node dread_shift_v8_8_2_patch.js",
     "restore:social": "node scripts/restore_social.js",
-    "build:prod": "npm run restore:social && node dread_shift_v8_9_patch.js && node scripts/protect_client.js",
-    "start": "node auth_policy_patch.js && node hud_layout_patch.js && node network_smoothing_patch.js && node copy_polish_patch.js && node lobby_tools_patch.js && node lobby_visibility_patch.js && node lobby_layer_patch.js && node dread_shift_overhaul_patch.js && node dread_shift_v8_2_patch.js && node dread_shift_v8_3_patch.js && node dread_shift_v8_4_patch.js && node dread_shift_v8_5_1_patch.js && node dread_shift_v8_5_2_patch.js && node dread_shift_v8_5_3_patch.js && node dread_shift_v8_5_4_patch.js && node dread_shift_v8_6_patch.js && node dread_shift_v8_6_1_patch.js && node dread_shift_v8_6_2_patch.js && node dread_shift_v8_6_3_patch.js && node dread_shift_v8_7_patch.js && node dread_shift_v8_7_1_patch.js && node dread_shift_v8_7_2_patch.js && node dread_shift_v8_8_patch.js && node dread_shift_v8_8_1_patch.js && node dread_shift_v8_8_2_patch.js && node db_bridge.js",
+    "build:prod": "npm run restore:social && node dread_shift_v8_9_patch.js && node dread_shift_v8_9_2_patch.js && node scripts/protect_client.js",
+    "start": "node auth_policy_patch.js && node hud_layout_patch.js && node network_smoothing_patch.js && node copy_polish_patch.js && node lobby_tools_patch.js && node lobby_visibility_patch.js && node lobby_layer_patch.js && node dread_shift_overhaul_patch.js && node dread_shift_v8_2_patch.js && node dread_shift_v8_3_patch.js && node dread_shift_v8_4_patch.js && node dread_shift_v8_5_1_patch.js && node dread_shift_v8_5_2_patch.js && node dread_shift_v8_5_3_patch.js && node dread_shift_v8_5_4_patch.js && node dread_shift_v8_6_patch.js && node dread_shift_v8_6_1_patch.js && node dread_shift_v8_6_2_patch.js && node dread_shift_v8_6_3_patch.js && node dread_shift_v8_7_patch.js && node dread_shift_v8_7_1_patch.js && node dread_shift_v8_7_2_patch.js && node dread_shift_v8_8_patch.js && node dread_shift_v8_8_1_patch.js && node dread_shift_v8_8_2_patch.js && node dread_shift_v8_9_patch.js && node dread_shift_v8_9_2_patch.js && node db_bridge.js",
     "start:prod": "node db_bridge.js",
     "start:legacy": "node server.js",
     "test": "node --test tests/*.test.js"
