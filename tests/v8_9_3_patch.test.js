@@ -44,7 +44,7 @@ test("release scripts use one canonical runtime patch chain and protection requi
   assert.equal(pkg.version,"8.9.9");
   assert.equal(pkg.scripts.start,"npm run patch:runtime && node db_bridge.js");
   assert.equal(pkg.scripts["build:prod"],"npm run patch:runtime && node scripts/protect_client.js");
-  assert.match(pkg.scripts["patch:runtime"],/dread_shift_v8_9_2_patch\.js && node dread_shift_v8_9_3_patch\.js && node dread_shift_v8_9_4_patch\.js && node dread_shift_v8_9_5_patch\.js && node dread_shift_v8_9_6_patch\.js && node dread_shift_v8_9_7_patch\.js && node dread_shift_v8_9_8_patch\.js && node dread_shift_v8_9_9_patch\.js && node dread_shift_v8_9_9_1_patch\.js && node dread_shift_v8_9_9_2_patch\.js$/);
+  assert.match(pkg.scripts["patch:runtime"],/dread_shift_v8_9_2_patch\.js && node dread_shift_v8_9_3_patch\.js && node dread_shift_v8_9_4_patch\.js && node dread_shift_v8_9_5_patch\.js && node dread_shift_v8_9_6_patch\.js && node dread_shift_v8_9_7_patch\.js && node dread_shift_v8_9_8_patch\.js && node dread_shift_v8_9_9_patch\.js && node dread_shift_v8_9_9_1_patch\.js && node dread_shift_v8_9_9_2_patch\.js && node dread_shift_v8_9_9_3_patch\.js$/);
   assert.match(protect,/DREAD SHIFT v8\.9\.9 client/);
   assert.match(protect,/scheduleReconnect/);
 });
