@@ -45,6 +45,6 @@ test("release scripts use one canonical runtime patch chain and protection requi
   assert.equal(pkg.scripts.start,"npm run patch:runtime && node db_bridge.js");
   assert.equal(pkg.scripts["build:prod"],"npm run patch:runtime && node scripts/protect_client.js");
   assert.match(pkg.scripts["patch:runtime"],/dread_shift_v8_9_2_patch\.js && node dread_shift_v8_9_3_patch\.js && node dread_shift_v8_9_4_patch\.js && node dread_shift_v8_9_5_patch\.js$/);
-  assert.match(protect,/DREAD SHIFT v8\.9\.3 client/);
+  assert.match(protect,/DREAD SHIFT v8\.9\.5 client/);
   assert.match(protect,/scheduleReconnect/);
 });

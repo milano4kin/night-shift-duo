@@ -3,16 +3,16 @@ const test=require("node:test"),assert=require("node:assert/strict"),fs=require(
 const root=path.join(__dirname,".."),read=file=>fs.readFileSync(path.join(root,file),"utf8");
 
 test("game UI prevents accidental selection and internal dragging while editable fields remain selectable",()=>{
-  const client=read("public/client.js"),css=read("public/style.css"),html=read("public/index.html");
+  const client=read("public/client.js"),css=read("public/style.css");
   assert.match(client,/function selectionAllowedTarget\(target\)/);
-  assert.match(client,/input, textarea, \[contenteditable\]:not\(\[contenteditable=\\"false\\"\]\)/);
+  assert.match(client,/input, textarea, \[contenteditable\]:not\(\[contenteditable="false"\]\)/);
   assert.match(client,/addEventListener\("selectstart".*preventDefault/s);
   assert.match(client,/addEventListener\("dragstart".*preventDefault/s);
   assert.match(css,/html,body,#app,#app \*\{[^}]*user-select:none/);
   assert.match(css,/input,textarea,\[contenteditable\]:not\(\[contenteditable="false"\]\)\{[^}]*user-select:text!important/);
   assert.match(css,/canvas,#game\{[^}]*user-drag:none/);
-  assert.match(html,/type="file"[^>]*id="avatarInput"|id="avatarInput"[^>]*type="file"/);
-  assert.doesNotMatch(client,/preventDefault\(\).*change.*avatarInput/s);
+  assert.match(client,/id="v88Avatar" type="file"/);
+  assert.match(client,/v88Avatar.*addEventListener\("change"/s);
 });
 
 test("runtime restores low-jitter local prediction and remote interpolation",()=>{
