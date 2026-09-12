@@ -15,7 +15,7 @@ test("v8.5.1 movement patch stays isolated from connection and auth code",()=>{
 
 test("movement and HUD patches remain enabled in release order",()=>{
   const pkg=require(path.join(root,"package.json"));
-  assert.equal(pkg.version,"8.9.0");
+  assert.equal(pkg.version,"8.9.1");
   assert.match(pkg.scripts.start,/dread_shift_v8_7_1_patch\.js && node dread_shift_v8_7_2_patch\.js && node dread_shift_v8_8_patch\.js && node dread_shift_v8_8_1_patch\.js && node dread_shift_v8_8_2_patch\.js && node db_bridge\.js$/);
 });
 
@@ -28,7 +28,7 @@ test("notification bell stays in the top-right corner",()=>{
 test("v8.5.2 fixes every weapon label and restricts QA admin to cattencel",()=>{
   const patch=fs.readFileSync(path.join(root,"dread_shift_v8_5_2_patch.js"),"utf8");
   const pkg=require(path.join(root,"package.json"));
-  assert.equal(pkg.version,"8.9.0");
+  assert.equal(pkg.version,"8.9.1");
   assert.match(patch,/\.weapon-slot \.slot-name/);
   assert.match(patch,/-webkit-line-clamp:2/);
   assert.match(patch,/===\"cattencel\"/);

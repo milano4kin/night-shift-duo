@@ -1891,6 +1891,10 @@ addEventListener("keydown",e=>{
   if(e.code==="Digit1")selectTool("gun");
   if(e.code==="Digit2")selectTool("multitool");
   if(e.code==="Digit3"&&state?.started){ send("useMedkit"); playSfx("heal"); }
+  if(e.code==="KeyT"&&!e.repeat&&isWallBuild(selectedBuild)){
+    e.preventDefault();wallSnapEnabled=!wallSnapEnabled;updateUnifiedUI(true);playSfx("ui");
+    toast(wallSnapEnabled?T("Магнит стен включён","Wall snap enabled"):T("Магнит стен выключен","Wall snap disabled"));
+  }
   if(e.code==="KeyR"&&state?.started&&activeTool==="gun"&&!meleeWeapons.has(myPlayer()?.weapon?.type))send("reload");
 });
 addEventListener("keyup",e=>{
@@ -2100,7 +2104,7 @@ function getBuildGhost(p){
     buildRotation=Math.round(buildRotation/(Math.PI/2))*(Math.PI/2);
 
     const raw={x,y};
-    let best=null,bestD=25;
+    let best=null,bestD=64;
     const dir={x:Math.cos(buildRotation),y:Math.sin(buildRotation)};
 
     for(const st of wallSnapEnabled?state.structures:[]){

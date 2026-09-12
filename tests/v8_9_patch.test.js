@@ -22,4 +22,6 @@ test("v8.9 doubles wall durability and tightens placement",()=>{
   const server=read("server.js"),client=read("public/client.js");
   assert.match(server,/wall:\s*\{[^\n]*hp:680/);assert.match(server,/const WALL_HALF_THICK=13/);
   assert.match(client,/wallSnapEnabled=true/);assert.match(client,/wallSnapEnabled\?state\.structures:\[\]/);assert.match(client,/const WALL_HALF_THICK=13/);
+  assert.match(client,/e\.code==="KeyT"&&!e\.repeat&&isWallBuild\(selectedBuild\)/);assert.match(client,/bestD=64/);
+  assert.doesNotMatch(read("public/style.css"),/#lobbyMetaNav \[data-lobby-pane\],\.talent-dock\{position:relative\}/);
 });

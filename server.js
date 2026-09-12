@@ -6,7 +6,7 @@ const crypto = require("crypto");
 const { WebSocketServer } = require("ws");
 
 const PORT = process.env.PORT || 8091;
-const BUILD_VERSION = "8.9.0";
+const BUILD_VERSION = "8.9.1";
 const QA_ADMIN_ENABLED = process.env.NSD_QA_ADMIN === "1" && process.env.NODE_ENV !== "production";
 const WS_MAX_PAYLOAD = 64 * 1024;
 const WS_MAX_MESSAGES_PER_SEC = 180;
