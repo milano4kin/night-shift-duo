@@ -24,9 +24,9 @@ test("v8.9.2 renders dedicated character skins instead of relying on the old fil
   assert.match(p,/v88Cos=function/);
 });
 
-test("v8.9.2 remains in the release chain before v8.9.3 and client protection",()=>{
+test("v8.9.2 remains in the canonical release chain before client protection",()=>{
   const pkg=require(path.join(root,"package.json"));
-  assert.equal(pkg.version,"8.9.3");
-  assert.match(pkg.scripts["patch:runtime"],/dread_shift_v8_9_patch\.js && node dread_shift_v8_9_2_patch\.js && node dread_shift_v8_9_3_patch\.js$/);
+  assert.equal(pkg.version,"8.9.5");
+  assert.match(pkg.scripts["patch:runtime"],/dread_shift_v8_9_patch\.js && node dread_shift_v8_9_2_patch\.js && node dread_shift_v8_9_3_patch\.js && node dread_shift_v8_9_4_patch\.js && node dread_shift_v8_9_5_patch\.js$/);
   assert.equal(pkg.scripts["build:prod"],"npm run patch:runtime && node scripts/protect_client.js");
 });

@@ -1,11 +1,11 @@
 {
   "name": "dread-shift",
-  "version": "8.9.3",
+  "version": "8.9.5",
   "private": true,
-  "description": "DREAD SHIFT v8.9.3 hardens lobby economy, reconnect recovery, shutdown saves, static delivery and production validation.",
+  "description": "DREAD SHIFT v8.9.5 prevents accidental UI selection and restores smooth network movement.",
   "main": "db_bridge.js",
   "scripts": {
-    "patch:runtime": "npm run restore:social && node dread_shift_v8_9_patch.js && node dread_shift_v8_9_2_patch.js && node dread_shift_v8_9_3_patch.js",
+    "patch:runtime": "npm run restore:social && node dread_shift_v8_9_patch.js && node dread_shift_v8_9_2_patch.js && node dread_shift_v8_9_3_patch.js && node dread_shift_v8_9_4_patch.js && node dread_shift_v8_9_5_patch.js",
     "restore:social": "node scripts/restore_social.js",
     "build:prod": "npm run patch:runtime && node scripts/protect_client.js",
     "start": "npm run patch:runtime && node db_bridge.js",
