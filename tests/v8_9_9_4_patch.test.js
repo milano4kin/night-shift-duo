@@ -8,7 +8,8 @@ test("hotbar keeps weapon, names and prices inside their slots",()=>{
   assert.match(css,/#hotbar \.weapon-slot\{[^}]*width:112px!important[^}]*height:88px!important[^}]*overflow:hidden!important/);
   assert.match(css,/#hotbar \.weapon-slot \.slot-name\{[^}]*width:98px!important[^}]*white-space:normal!important[^}]*text-align:center!important/);
   assert.match(css,/#hotbar \.slot-name\{[^}]*-webkit-line-clamp:2!important[^}]*overflow:hidden!important/);
-  assert.match(css,/#hotbar \.slot\.build \.slot-cost\{[^}]*white-space:normal!important[^}]*overflow:hidden!important/);
+  assert.match(css,/#hotbar \.slot\.build \.slot-cost\{[^}]*overflow:hidden!important/);
+  assert.match(css,/#hotbar \.slot\.build \.slot-cost\{[^}]*white-space:normal!important/);
   assert.match(css,/#hotbar \.build-slot-img\{[^}]*width:38px!important[^}]*height:36px!important/);
 });
 
