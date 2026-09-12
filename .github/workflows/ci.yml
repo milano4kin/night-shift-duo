@@ -34,6 +34,7 @@ jobs:
           node --check dread_shift_v8_9_7_patch.js
           node --check dread_shift_v8_9_8_patch.js
           node --check dread_shift_v8_9_9_patch.js
+          node --check dread_shift_v8_9_9_1_patch.js
           node --check scripts/protect_client.js
           node --check db_bridge.js
           cp v88_client_extension.jsfrag /tmp/v88_client_extension.js
@@ -47,6 +48,7 @@ jobs:
           node --check db_bridge.js
           grep -q 'const BUILD_VERSION = "8.9.9"' server.js
           grep -q 'DREAD SHIFT v8.9.9 client' public/client.js
+          grep -q 'DREAD SHIFT v8.9.9.1 talent attention' public/client.js
           grep -q 'DREAD SHIFT v8.9.3 db' db_bridge.js
           grep -q '<title>Dread Shift v8.9.9</title>' public/index.html
       - name: Full regression tests
