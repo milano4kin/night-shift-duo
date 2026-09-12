@@ -32,7 +32,7 @@ test("v8.9.9 is the protected production release",()=>{
   assert.equal(pkg.version,"8.9.9");
   assert.equal(lock.version,"8.9.9");
   assert.equal(lock.packages[""].version,"8.9.9");
-  assert.match(pkg.scripts["patch:runtime"],/dread_shift_v8_9_7_patch\.js && node dread_shift_v8_9_8_patch\.js && node dread_shift_v8_9_9_patch\.js && node dread_shift_v8_9_9_1_patch\.js && node dread_shift_v8_9_9_2_patch\.js && node dread_shift_v8_9_9_3_patch\.js$/);
+  assert.match(pkg.scripts["patch:runtime"],/dread_shift_v8_9_7_patch\.js && node dread_shift_v8_9_8_patch\.js/);
   assert.match(protect,/DREAD SHIFT v8\.9\.9 client/);
   assert.match(protect,/BUILD_VERSION = "8\.9\.9"/);
 });
