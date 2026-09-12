@@ -30,7 +30,7 @@ test("wall menu shows upgrade all with connected count and total cost",()=>{
   assert.match(client,/send\("structureUpgradeAll",\{structureId:st\.id\}\)/);
 });
 
-test("tower range and wall group patch remains last in the runtime chain",()=>{
+test("tower range and wall group patch remains before the hotbar fit patch",()=>{
   const pkg=require(path.join(root,"package.json"));
-  assert.match(pkg.scripts["patch:runtime"],/dread_shift_v8_9_9_2_patch\.js && node dread_shift_v8_9_9_3_patch\.js$/);
+  assert.match(pkg.scripts["patch:runtime"],/dread_shift_v8_9_9_2_patch\.js && node dread_shift_v8_9_9_3_patch\.js && node dread_shift_v8_9_9_4_patch\.js$/);
 });
