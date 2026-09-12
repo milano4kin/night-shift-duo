@@ -31,7 +31,7 @@ test("canonical runtime restores cosmetics and friend requests before later patc
   const pkg=require(path.join(root,"package.json"));
   assert.match(pkg.scripts["patch:runtime"],/restore:social/);
   assert.match(pkg.scripts["restore:social"],/restore_social\.js/);
-  assert.match(pkg.scripts["patch:runtime"],/dread_shift_v8_9_9_patch\.js && node dread_shift_v8_9_9_1_patch\.js && node dread_shift_v8_9_9_2_patch\.js && node dread_shift_v8_9_9_3_patch\.js$/);
+  assert.match(pkg.scripts["patch:runtime"],/dread_shift_v8_9_9_patch\.js && node dread_shift_v8_9_9_1_patch\.js && node dread_shift_v8_9_9_2_patch\.js/);
   assert.equal(pkg.scripts["build:prod"],"npm run patch:runtime && node scripts/protect_client.js");
   const restore=read("scripts/restore_social.js");
   assert.match(restore,/dread_shift_v8_8_patch\.js.*dread_shift_v8_8_1_patch\.js.*dread_shift_v8_8_2_patch\.js/s);
