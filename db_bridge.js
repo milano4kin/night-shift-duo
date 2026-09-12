@@ -111,8 +111,9 @@ async function startWithPostgres() {
   const pending = new Map();
   let shuttingDown = false;
   let syncingAll = false;
+  const persistChains = new Map();
 
-  async function persistFile(name) {
+  async function persistFileNow(name) {
     const safe = safeSaveFileName(name);
     if (!safe) return;
     const payload = readJsonFile(safe);
@@ -127,6 +128,18 @@ async function startWithPostgres() {
       [safe, serialized]
     );
     lastSynced.set(safe, serialized);
+  }
+
+  function persistFile(name) {
+    const safe = safeSaveFileName(name);
+    if (!safe) return Promise.resolve();
+    const previous = persistChains.get(safe) || Promise.resolve();
+    const next = previous.catch(() => {}).then(() => persistFileNow(safe));
+    persistChains.set(safe, next);
+    next.finally(() => {
+      if (persistChains.get(safe) === next) persistChains.delete(safe);
+    }).catch(() => {});
+    return next;
   }
 
   function queuePersist(name) {
