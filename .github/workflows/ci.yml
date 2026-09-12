@@ -26,7 +26,7 @@ jobs:
           cp v88_client_extension.jsfrag /tmp/v88_client_extension.js
           node --check /tmp/v88_client_extension.js
       - name: Verify release runtime
-        run: node dread_shift_v8_9_patch.js
+        run: npm run restore:social && node dread_shift_v8_9_patch.js
       - name: Validate patched runtime files
         run: |
           node --check server.js

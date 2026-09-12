@@ -11,7 +11,7 @@ function replaceOnce(s,from,to,label){
 function patchServer(){
   let s=read("server.js");
   if(s.includes("/* DREAD SHIFT v8.8.2 server */"))return false;
-  s=replaceOnce(s,'const BUILD_VERSION = "8.8.0";','const BUILD_VERSION = "8.8.2";',"build version");
+  s=replaceOnce(s,'const BUILD_VERSION = "8.8.0";','const BUILD_VERSION = "8.9.1";',"build version");
   s=replaceOnce(
     s,
     '["accountSetAvatar","accountFriendAdd","accountFriendRemove","metaCosmeticBuy","metaCosmeticEquip"]',
