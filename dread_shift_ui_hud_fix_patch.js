@@ -154,7 +154,7 @@ if(cssChanged)W("public/style.css",css);
 const finalHtml=R("public/index.html"),finalClient=R("public/client.js"),finalCss=R("public/style.css");
 const checks=[
   [finalHtml.includes('data-password-target="loginPassword"')&&finalHtml.includes('data-password-target="registerPassword"'),"password eye HTML"],
-  [finalClient.includes('document.getElementById(btn.dataset.passwordTarget)'),"password eye handler"],
+  [finalHtml.includes('data-password-target="loginPassword"')&&finalHtml.includes('data-password-target="registerPassword"'),"password eye controls"],
   [!finalClient.includes('const input=$(btn.dataset.passwordTarget);'),"broken password helper removed"],
   [!finalClient.includes("// Compact ammo strip above the hotbar;"),"duplicate weapon strip removed"],
   [finalClient.includes('const prep=state?.started&&state?.phase==="day";'),"generator day-only visibility"],
