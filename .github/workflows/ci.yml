@@ -2,7 +2,7 @@ name: Dread Shift CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, "feature/**"]
   workflow_dispatch:
 
 jobs:
@@ -41,6 +41,10 @@ jobs:
           node --check dread_shift_restore_all_patch.js
           node --check dread_shift_ui_hud_fix_patch.js
           node --check dread_shift_ui_polish_patch.js
+          node --check dread_shift_yandex_backend_patch.js
+          node --check yandex/yandex_bridge.js
+          node --check scripts/build_yandex.js
+          node --check scripts/yandex_integration_audit.js
           node --check scripts/protect_client.js
           node --check db_bridge.js
           cp v88_client_extension.jsfrag /tmp/v88_client_extension.js
@@ -67,6 +71,9 @@ jobs:
           grep -q 'DREAD SHIFT · UPDATE 8.9.9' public/index.html
           grep -q 'placeholder="например: Player123"' public/index.html
           grep -q 'function openLobbySettings' public/client.js
+          grep -q 'DREAD SHIFT Yandex backend 2026-09-18' server.js
+          grep -q '/api/yandex/session' server.js
+          grep -q 'm.type==="yandexRewarded"' server.js
           grep -q 'onclick="const i=document.getElementById' public/index.html
           ! grep -q 'Compact ammo strip above the hotbar' public/client.js
           grep -q 'DREAD SHIFT full restore 2026-09-13 client' public/client.js
@@ -96,6 +103,18 @@ jobs:
         run: node scripts/persistence_integration_audit.js
       - name: Two-player DUO audit
         run: node scripts/duo_integration_audit.js
+      - name: Yandex backend integration audit
+        run: node scripts/yandex_integration_audit.js
+      - name: Build and validate Yandex Games archive
+        env:
+          YANDEX_BACKEND_URL: https://backend.example.com
+        run: |
+          npm run build:yandex
+          test -f dist/dread-shift-yandex.zip
+          test -f dist/yandex/index.html
+          grep -q '/sdk.js' dist/yandex/index.html
+          grep -q 'yandex_bridge.js' dist/yandex/index.html
+          ! grep -q './client.js' dist/yandex/index.html
       - name: Dependency security audit
         run: npm audit --omit=dev --audit-level=high
       - name: Protect production browser client
