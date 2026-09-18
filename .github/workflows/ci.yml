@@ -81,6 +81,8 @@ jobs:
         run: node scripts/idempotence_audit.js
       - name: Live HTTP WebSocket gameplay audit
         run: node scripts/runtime_integration_audit.js
+      - name: Fifty-wave simulation stress audit
+        run: node scripts/simulation_stress_audit.js
       - name: Persistence restart audit
         run: node scripts/persistence_integration_audit.js
       - name: Two-player DUO audit
