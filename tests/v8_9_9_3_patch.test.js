@@ -32,6 +32,6 @@ test("wall menu shows upgrade all with connected count and total cost",()=>{
 
 test("tower range and wall group patch remains before hotbar and restore layers",()=>{
   const pkg=require(path.join(root,"package.json")),cmd=pkg.scripts["patch:runtime"];
-  const p2=cmd.indexOf("dread_shift_v8_9_9_2_patch.js"),p3=cmd.indexOf("dread_shift_v8_9_9_3_patch.js"),p4=cmd.indexOf("dread_shift_v8_9_9_4_patch.js"),restore=cmd.indexOf("dread_shift_restore_full_patch.js");
+  const p2=cmd.indexOf("dread_shift_v8_9_9_2_patch.js"),p3=cmd.indexOf("dread_shift_v8_9_9_3_patch.js"),p4=cmd.indexOf("dread_shift_v8_9_9_4_patch.js"),restore=cmd.indexOf("dread_shift_restore_all_patch.js");
   assert.ok(p2>=0&&p3>p2&&p4>p3&&restore>p4);
 });
