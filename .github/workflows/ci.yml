@@ -2,7 +2,7 @@ name: Dread Shift CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, "fix/**"]
   workflow_dispatch:
 
 jobs:
@@ -65,6 +65,7 @@ jobs:
           grep -q 'DREAD SHIFT UI HUD fix 2026-09-18' public/style.css
           grep -q 'DREAD SHIFT lobby polish 2026-09-18' public/style.css
           grep -q 'DREAD SHIFT · UPDATE 8.9.9' public/index.html
+          grep -q 'placeholder="например: Player123"' public/index.html
           grep -q 'function openLobbySettings' public/client.js
           grep -q 'onclick="const i=document.getElementById' public/index.html
           ! grep -q 'Compact ammo strip above the hotbar' public/client.js
