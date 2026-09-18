@@ -142,7 +142,23 @@ async function main(){
   const night=await p.wait(m=>m.type==="snapshot"&&m.state?.phase==="night","night after skipPrep",8000);
   assert(Number(night.state.wave)>=1,"skipPrep did not start a wave");
 
+  const originalPlayerId=joined.playerId;
   p.close();
+  await sleep(120);
+
+  // A short disconnect must rebind the same live run, not create a fresh lobby session.
+  const reconnect=await new Probe().open();
+  reconnect.send("resumeSession",{token});
+  const reAuth=await reconnect.wait(m=>m.type==="authSuccess"&&m.reconnected===true,"reconnected auth",5000);
+  assert(reAuth.account?.username===username,"reconnect restored wrong account");
+  const rejoined=await reconnect.type("reconnected",5000);
+  assert(rejoined.playerId===originalPlayerId,"reconnect changed the player id");
+  assert(rejoined.started===true,"reconnect lost the active run");
+  const resumedSnap=await reconnect.wait(m=>m.type==="snapshot"&&m.state?.started===true,"snapshot after reconnect",5000);
+  assert(resumedSnap.state.paused===false,"solo run stayed paused after reconnect");
+  reconnect.send("leaveToLobby");
+  await reconnect.type("returnedToLobby",5000);
+  reconnect.close();
 
   // HTTP auth must share the abuse throttle with WebSocket auth.
   let saw429=false;
@@ -155,7 +171,7 @@ async function main(){
   await sleep(150);
   const alive=await fetch(base+"/");
   assert(alive.ok,"server died after gameplay socket closed");
-  console.log("[runtime-audit] PASS auth/session/codes/solo/start/skip/reconnect basics");
+  console.log("[runtime-audit] PASS auth/session/codes/solo/start/skip/reconnect/rate-limit basics");
 }
 main().then(()=>{
   try{child.kill("SIGTERM");}catch{}
