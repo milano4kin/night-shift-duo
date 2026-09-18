@@ -50,3 +50,21 @@ test("Yandex release does not replace the normal web production build",()=>{
   assert.equal(pkg.scripts["build:prod"],"npm run patch:runtime && node scripts/protect_client.js");
   assert.equal(pkg.scripts["start:prod"],"node db_bridge.js");
 });
+
+
+test("Yandex cloud telemetry starts only after Player initialization",()=>{
+  const b=read("yandex/yandex_bridge.js");
+  const session=b.indexOf("await createBackendSession();");
+  const cloud=b.indexOf("installCloudTelemetry();");
+  assert.ok(session>=0&&cloud>session,"cloud telemetry must start after ysdk.getPlayer()");
+});
+
+test("Yandex publication preflight covers common moderation failures",()=>{
+  const p=read("scripts/yandex_release_preflight.js"),pkg=JSON.parse(read("package.json"));
+  assert.match(p,/LoadingAPI\.ready missing/);
+  assert.match(p,/language detection missing/);
+  assert.match(p,/context-menu suppression missing/);
+  assert.match(p,/external HTTP link exists/);
+  assert.match(p,/fullscreen ad must not be timer-driven/);
+  assert.equal(pkg.scripts["preflight:yandex"],"node scripts/yandex_release_preflight.js");
+});
