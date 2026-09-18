@@ -3,3 +3,4 @@ saves/*.json
 !saves/.gitkeep
 .DS_Store
 npm-debug.log*
+dist/
