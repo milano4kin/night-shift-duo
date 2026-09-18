@@ -143,6 +143,15 @@ async function main(){
   assert(Number(night.state.wave)>=1,"skipPrep did not start a wave");
 
   p.close();
+
+  // HTTP auth must share the abuse throttle with WebSocket auth.
+  let saw429=false;
+  for(let i=0;i<20;i++){
+    const brute=await jsonPost("/api/auth/login",{username:"missing_"+suffix,password:"bad-"+i});
+    if(brute.status===429){saw429=true;break;}
+  }
+  assert(saw429,"HTTP auth did not enforce the abuse rate limit");
+
   await sleep(150);
   const alive=await fetch(base+"/");
   assert(alive.ok,"server died after gameplay socket closed");
