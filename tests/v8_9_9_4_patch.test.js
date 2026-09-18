@@ -13,7 +13,8 @@ test("hotbar keeps weapon, names and prices inside their slots",()=>{
   assert.match(css,/#hotbar \.build-slot-img\{[^}]*width:38px!important[^}]*height:36px!important/);
 });
 
-test("hotbar fit is the final runtime patch",()=>{
-  const pkg=require(path.join(root,"package.json"));
-  assert.match(pkg.scripts["patch:runtime"],/dread_shift_v8_9_9_3_patch\.js && node dread_shift_v8_9_9_4_patch\.js$/);
+test("hotbar fit remains before the audited restore layer",()=>{
+  const pkg=require(path.join(root,"package.json")),cmd=pkg.scripts["patch:runtime"];
+  const p3=cmd.indexOf("dread_shift_v8_9_9_3_patch.js"),p4=cmd.indexOf("dread_shift_v8_9_9_4_patch.js"),restore=cmd.indexOf("dread_shift_restore_all_patch.js");
+  assert.ok(p3>=0&&p4>p3&&restore>p4);
 });
