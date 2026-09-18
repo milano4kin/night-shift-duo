@@ -4,6 +4,13 @@
   const BUILD="8.9.9-yandex";
   let ysdk=null,player=null,platformPaused=false,adOpen=false,readySent=false,gameplayMarked=false,retryBypass=false,cloudTimer=null;
   const activeAudio=window.__DREAD_ACTIVE_AUDIO__=window.__DREAD_ACTIVE_AUDIO__||new Set();
+  const nativeMediaPlay=HTMLMediaElement.prototype.play;
+  HTMLMediaElement.prototype.play=function(...args){
+    activeAudio.add(this);
+    const cleanup=()=>activeAudio.delete(this);this.addEventListener("ended",cleanup,{once:true});
+    if(window.__DREAD_PLATFORM_MUTED__)return Promise.resolve();
+    return nativeMediaPlay.apply(this,args);
+  };
   window.__DREAD_YANDEX__=true;
   window.DREAD_HTTP_BASE=BACKEND;
   window.DREAD_WS_URL=BACKEND.replace(/^http/i,"ws");
@@ -159,20 +166,9 @@
   }
 
   function installCloudTelemetry(){
-    window.addEventListener("dread:yandex-meta",e=>{
-      if(!player?.setData)return;
-      clearTimeout(cloudTimer);cloudTimer=setTimeout(async()=>{
-        const m=e.detail||{},safe={
-          version:BUILD,
-          savedAt:Date.now(),
-          silver:Math.max(0,Number(m.silver)||0),
-          gold:Math.max(0,Number(m.gold)||0),
-          bestWave:Math.max(0,Number(m.bestWave)||0),
-          accountLevel:Math.max(1,Number(m.account?.accountLevel)||1)
-        };
-        try{await player.setData({dreadShift:safe},false);if(player.setStats)await player.setStats({bestWave:safe.bestWave,accountLevel:safe.accountLevel});}catch(err){console.warn("[Yandex] cloud telemetry",err);}
-      },1500);
-    });
+    if(!player?.setData)return;
+    const saveHeartbeat=async()=>{try{await player.setData({dreadShiftPlatform:{version:BUILD,lastSeen:Date.now()}},false);}catch(err){console.warn("[Yandex] cloud telemetry",err);}};
+    saveHeartbeat();cloudTimer=setInterval(saveHeartbeat,120000);
   }
 
   async function init(){
