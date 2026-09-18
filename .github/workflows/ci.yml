@@ -2,7 +2,7 @@ name: Dread Shift CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, "yandex/**"]
   workflow_dispatch:
 
 jobs:
@@ -45,6 +45,7 @@ jobs:
           node --check yandex/yandex_bridge.js
           node --check scripts/build_yandex.js
           node --check scripts/yandex_integration_audit.js
+          node --check scripts/yandex_release_preflight.js
           node --check scripts/protect_client.js
           node --check db_bridge.js
           cp v88_client_extension.jsfrag /tmp/v88_client_extension.js
@@ -105,6 +106,8 @@ jobs:
         run: node scripts/duo_integration_audit.js
       - name: Yandex backend integration audit
         run: node scripts/yandex_integration_audit.js
+      - name: Yandex publication preflight
+        run: npm run preflight:yandex
       - name: Build and validate Yandex Games archive
         env:
           YANDEX_BACKEND_URL: https://backend.example.com
