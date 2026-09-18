@@ -5,10 +5,12 @@ const read=p=>fs.readFileSync(path.join(root,p),"utf8");
 
 test("single restore keeps lobby bell, What's New, INDEX and CODES",()=>{
   const html=read("public/index.html"),client=read("public/client.js"),server=read("server.js"),css=read("public/style.css");
-  for(const id of ["notificationBell","openWhatsNewBtn","lobbySideActions","indexBookBtn","codesBtn","codesOverlay"])assert.match(html,new RegExp('id="'+id+'"'));
-  assert.match(client,/function pushNotification\\(/);\n  assert.match(html,/id="notificationCenter"/);
+  for(const id of ["notificationBell","notificationCenter","openWhatsNewBtn","lobbySideActions","indexBookBtn","codesBtn","codesOverlay"]) {
+    assert.match(html,new RegExp('id="'+id+'"'));
+  }
+  assert.match(client,/function pushNotification\(/);
   assert.match(client,/function openCodes\(/);
-  assert.match(css,/restore-whats-new/);
+  assert.match(css,/restore-all notification center/);
   assert.match(server,/const DEVELOPER_CODES=/);
   assert.match(server,/WELCOME:\{display:"Welcome",silver:300,gold:25,crateTokens:1\}/);
   assert.match(server,/TEST:\{display:"TEST",silver:150,gold:10,crateTokens:0\}/);
