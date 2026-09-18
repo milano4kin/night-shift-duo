@@ -111,10 +111,11 @@ jobs:
         run: |
           npm run build:yandex
           test -f dist/dread-shift-yandex.zip
+          unzip -t dist/dread-shift-yandex.zip
           test -f dist/yandex/index.html
           grep -q '/sdk.js' dist/yandex/index.html
           grep -q 'yandex_bridge.js' dist/yandex/index.html
-          ! grep -q './client.js' dist/yandex/index.html
+          ! grep -Eq 'src="(\\./)?client\\.js"' dist/yandex/index.html
       - name: Dependency security audit
         run: npm audit --omit=dev --audit-level=high
       - name: Protect production browser client
