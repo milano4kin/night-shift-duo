@@ -32,7 +32,7 @@ for(const re of [
   for(const m of client.matchAll(re))refs.add(m[1]);
 }
 const missing=[...refs].filter(id=>!defined.has(id)).sort();
-const harmlessOptional=new Set(["gameRail"]);
+const harmlessOptional=new Set();
 const hardMissing=missing.filter(id=>!harmlessOptional.has(id));
 if(hardMissing.length)fail("literal DOM references without any HTML/dynamic id definition: "+hardMissing.join(", "));
 for(const id of missing.filter(id=>harmlessOptional.has(id)))warn("dead optional DOM reference: "+id);
