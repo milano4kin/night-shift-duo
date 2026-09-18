@@ -75,6 +75,20 @@ jobs:
           grep -q '<title>Dread Shift v8.9.9</title>' public/index.html
       - name: Full regression tests
         run: npm test
+      - name: Deep static runtime audit
+        run: node scripts/deep_static_audit.js
+      - name: Runtime patch idempotence audit
+        run: node scripts/idempotence_audit.js
+      - name: Live HTTP WebSocket gameplay audit
+        run: node scripts/runtime_integration_audit.js
+      - name: Fifty-wave simulation stress audit
+        run: node scripts/simulation_stress_audit.js
+      - name: Persistence restart audit
+        run: node scripts/persistence_integration_audit.js
+      - name: Two-player DUO audit
+        run: node scripts/duo_integration_audit.js
+      - name: Dependency security audit
+        run: npm audit --omit=dev --audit-level=high
       - name: Protect production browser client
         run: node scripts/protect_client.js
       - name: Validate production protection

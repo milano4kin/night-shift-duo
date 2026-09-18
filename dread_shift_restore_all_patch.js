@@ -292,6 +292,7 @@ function patchServer(){
       'const server=http.createServer((req,res)=>{',
       '  const requestPath=req.url.split("?")[0];',
       '  if(req.method==="POST"&&(requestPath==="/api/auth/register"||requestPath==="/api/auth/login")){',
+      '    if(typeof allowAuthAttempt==="function"&&!allowAuthAttempt(req)){res.writeHead(429,{"Content-Type":"application/json; charset=utf-8","Cache-Control":"no-store","Retry-After":"30"});return res.end(JSON.stringify({ok:false,message:"Слишком много попыток. Подождите около 30 секунд."}));}',
       '    let bodyText="";req.setEncoding("utf8");',
       '    req.on("data",chunk=>{if(bodyText.length<=8192)bodyText+=chunk;});',
       '    req.on("end",()=>{',
@@ -442,9 +443,34 @@ console.log("DREAD SHIFT full restore applied:",changed);
   }
   if(!client.includes("maybeStoreNotification(text);"))client=client.replace('function toast(text){\\n  notice.textContent=text;notice.classList.add("visible");','function toast(text){\\n  notice.textContent=text;notice.classList.add("visible");\\n  maybeStoreNotification(text);');
   if(client.includes('if(m.ok){$("developerCodeInput").value="";playSfx("coin");}')&&!client.includes('pushNotification(translateServerText(m.message'))client=client.replace('if(m.ok){$("developerCodeInput").value="";playSfx("coin");}','if(m.ok){$("developerCodeInput").value="";playSfx("coin");pushNotification(translateServerText(m.message||"Код активирован"),"code");}');
+  client=client.replace('const gameRail=$("gameRail"),combatLogPanel=$("combatLogPanel");','const combatLogPanel=$("combatLogPanel");');
+  client=client.replace('const inRun=!!state?.started&&!lobby.classList.contains("visible");gameRail?.classList.toggle("hidden",!inRun);combatLogPanel?.classList.toggle("hidden",!inRun);','const inRun=!!state?.started&&!lobby.classList.contains("visible");combatLogPanel?.classList.toggle("hidden",!inRun);');
   new Function(client);write("public/client.js",client);
   const cssMarker="/* DREAD SHIFT restore-all notification center */";
   if(!css.includes(cssMarker)){css+="\\n"+"/* DREAD SHIFT restore-all notification center */\\n.notification-bell{position:fixed;right:14px;top:14px;z-index:100;width:46px;height:46px;border-radius:15px;border:1px solid rgba(255,255,255,.12);background:rgba(10,16,19,.96);color:#edf5f2;font-size:20px;display:grid;place-items:center;box-shadow:0 12px 34px rgba(0,0,0,.38)}\\n.notification-bell span{position:absolute;right:-4px;top:-5px;min-width:20px;height:20px;padding:0 5px;border-radius:10px;background:#e65d67;color:white;font-size:10px;font-weight:950;display:grid;place-items:center}\\n.notification-center{position:fixed;right:14px;top:68px;z-index:99;width:min(370px,calc(100vw - 28px));max-height:480px;display:none;overflow:hidden;border-radius:17px;border:1px solid rgba(255,255,255,.11);background:rgba(8,13,16,.98);box-shadow:0 26px 80px rgba(0,0,0,.58);backdrop-filter:blur(12px)}\\n.notification-center.visible{display:block}.notification-center header{display:flex;align-items:center;justify-content:space-between;padding:14px 15px;border-bottom:1px solid rgba(255,255,255,.07)}.notification-center header small{display:block;color:#6ed996;font-size:9px;font-weight:900;letter-spacing:.14em}.notification-center header b{font-size:13px}.notification-center header button{border:0;background:transparent;color:#7e8d93;font-size:11px}.notification-list{max-height:410px;overflow:auto;padding:8px}.notification-item{display:grid;grid-template-columns:1fr auto;gap:8px;padding:11px 12px;border-radius:11px;color:#dce5e1}.notification-item.unread{background:#102019}.notification-item b{font-size:12px;line-height:1.35}.notification-item small{font-size:9px;color:#728087}.notification-empty{padding:25px 16px;text-align:center;color:#76858b;font-size:12px}\\n#openWhatsNewBtn.restore-whats-new{position:fixed!important;top:14px!important;right:66px!important;z-index:100!important;width:auto!important;min-height:42px!important;padding:0 12px!important;border-radius:12px!important;font-size:11px!important;white-space:nowrap!important}\\n.lobby-side-actions{z-index:98!important}\\n@media(max-width:760px){.notification-bell{top:10px;right:10px}.notification-center{top:62px;right:10px}#openWhatsNewBtn.restore-whats-new{top:10px!important;right:58px!important;min-height:40px!important;padding:0 9px!important}}"+"\\n";write("public/style.css",css);}
+  const runtimeRevisionMarker="/* DREAD SHIFT runtime revision 2026-09-18-deep1 */";
+  let finalServer=read("server.js"),serverDirty=false;
+  if(!finalServer.includes('if(m.type==="redeemCode")')){
+    const getMetaBlock='    if(m.type==="getMeta"){\n      const profile=p?.profile||account.username;\n      const target=p||loadMetaTarget(profile,account);sendMeta(ws,target);return;\n    }\n';
+    if(!finalServer.includes(getMetaBlock))throw new Error("restore-all: getMeta handler anchor missing");
+    const redeemHandler='    if(m.type==="redeemCode"){\n      const profile=p?.profile||account.username;\n      if(room?.started)return send(ws,"codeRedeemResult",{ok:false,message:"Коды можно активировать только в лобби"});\n      if(!p&&activeProfiles.has(profile))return send(ws,"codeRedeemResult",{ok:false,message:"Этот аккаунт сейчас используется в активном забеге"});\n      const target=p||loadMetaTarget(profile,account);\n      const result=redeemDeveloperCode(target,m.code);\n      send(ws,"codeRedeemResult",result);sendMeta(ws,target);return;\n    }\n';
+    finalServer=finalServer.replace(getMetaBlock,getMetaBlock+redeemHandler);serverDirty=true;
+  }
+  if(finalServer.includes("spikeContactState.get(")&&!finalServer.includes("const spikeContactState=new Map();")){
+    const updateAnchor="function updateRoom(room,dt){";
+    if(!finalServer.includes(updateAnchor))throw new Error("restore-all: updateRoom anchor missing for spike state");
+    const helper='const SPIKE_CONTACT_LIMIT_BY_LEVEL=[0,25,40,60];\nconst spikeContactState=new Map();\nfunction spikeContactLimit(st){return SPIKE_CONTACT_LIMIT_BY_LEVEL[Math.max(1,Math.min(3,Number(st?.level)||1))]||25;}\n';
+    finalServer=finalServer.replace(updateAnchor,helper+updateAnchor);serverDirty=true;
+  }
+  if(!finalServer.includes("rewardMilestones:Array.isArray(x.rewardMilestones)")){
+    const oldHistory='function normalizeHistory(arr){return (Array.isArray(arr)?arr:[]).slice(0,5).map(x=>({date:String(x.date||""),wave:Math.max(0,Number(x.wave)||0),kills:Math.max(0,Number(x.kills)||0),builds:Math.max(0,Number(x.builds)||0),damage:Math.max(0,Math.round(Number(x.damage)||0)),classId:String(x.classId||"starter"),petId:x.petId||null,weapon:String(x.weapon||"pistol"),result:String(x.result||"gameover")}));}';
+    const newHistory='function normalizeHistory(arr){return (Array.isArray(arr)?arr:[]).slice(0,5).map(x=>({date:String(x.date||""),wave:Math.max(0,Number(x.wave)||0),completedWaves:Math.max(0,Math.min(50,Number(x.completedWaves??x.wave)||0)),kills:Math.max(0,Number(x.kills)||0),builds:Math.max(0,Number(x.builds)||0),damage:Math.max(0,Math.round(Number(x.damage)||0)),classId:String(x.classId||"starter"),petId:x.petId||null,weapon:String(x.weapon||"pistol"),result:String(x.result||"gameover"),earnedSilver:Math.max(0,Number(x.earnedSilver)||0),earnedGold:Math.max(0,Number(x.earnedGold)||0),rewardMilestones:Array.isArray(x.rewardMilestones)?x.rewardMilestones.map(Number).filter(v=>Number.isFinite(v)&&v>=5&&v<=50):[]}));}';
+    if(!finalServer.includes(oldHistory))throw new Error("restore-all: normalizeHistory anchor missing");
+    finalServer=finalServer.replace(oldHistory,newHistory);serverDirty=true;
+  }
+  if(!finalServer.includes(runtimeRevisionMarker)){finalServer+="\n"+runtimeRevisionMarker+"\n";serverDirty=true;}
+  if(!client.includes(runtimeRevisionMarker)){client+="\n"+runtimeRevisionMarker+"\n";new Function(client);write("public/client.js",client);}
+  if(serverDirty){new Function(finalServer);write("server.js",finalServer);}
   const server=read("server.js"),finalClient=read("public/client.js"),finalCss=read("public/style.css"),finalHtml=read("public/index.html");
   const required=[
     [finalHtml.includes('id="notificationBell"')&&finalHtml.includes('id="notificationCenter"'),"notification HTML"],
@@ -457,7 +483,8 @@ console.log("DREAD SHIFT full restore applied:",changed);
     [finalClient.includes("function openCodes("),"CODES client"],
     [finalClient.includes("function pushNotification("),"notification runtime"],
     [finalClient.includes("smoothPets=new Map()"),"smooth pets"],
-    [finalCss.includes(cssMarker),"notification styles"]
+    [finalCss.includes(cssMarker),"notification styles"],
+    [finalServer.includes(runtimeRevisionMarker)&&finalClient.includes(runtimeRevisionMarker),"runtime revision marker"]
   ];
   for(const [ok,label] of required)if(!ok)throw new Error("restore-all validation failed: "+label);
   console.log("DREAD SHIFT restore-all patch applied and validated.");
