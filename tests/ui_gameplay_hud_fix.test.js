@@ -2,12 +2,11 @@
 const test=require("node:test"),assert=require("node:assert/strict"),fs=require("node:fs"),path=require("node:path");
 const root=path.join(__dirname,".."),read=f=>fs.readFileSync(path.join(root,f),"utf8");
 
-test("password reveal uses a real DOM lookup outside the client IIFE",()=>{
+test("password reveal is self-contained in the button markup",()=>{
   const html=read("public/index.html"),client=read("public/client.js");
-  assert.match(html,/data-password-target="loginPassword"/);
-  assert.match(html,/data-password-target="registerPassword"/);
-  assert.match(client,/document\.getElementById\(btn\.dataset\.passwordTarget\)/);
-  assert.doesNotMatch(client,/const input=\$\(btn\.dataset\.passwordTarget\)/);
+  assert.match(html,/data-password-target="loginPassword"[^>]*onclick=/);
+  assert.match(html,/data-password-target="registerPassword"[^>]*onclick=/);
+  assert.doesNotMatch(client,/document\.querySelectorAll\("\[data-password-target\]"\)/);
 });
 
 test("duplicate weapon strip is removed and the hotbar has final compact overrides",()=>{
@@ -36,7 +35,8 @@ test("What's New is forcibly hidden for active runs",()=>{
   assert.match(css,/\.ds-run-hidden\{display:none!important\}/);
 });
 
-test("UI HUD patch is last in the runtime chain",()=>{
+test("UI HUD patch runs after restore and before final lobby polish",()=>{
   const pkg=JSON.parse(read("package.json")),cmd=pkg.scripts["patch:runtime"];
-  assert.ok(cmd.indexOf("dread_shift_ui_hud_fix_patch.js")>cmd.indexOf("dread_shift_restore_all_patch.js"));
+  const restore=cmd.indexOf("dread_shift_restore_all_patch.js"),hud=cmd.indexOf("dread_shift_ui_hud_fix_patch.js"),polish=cmd.indexOf("dread_shift_ui_polish_patch.js");
+  assert.ok(restore>=0&&hud>restore&&polish>hud);
 });
