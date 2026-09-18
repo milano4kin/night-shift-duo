@@ -6,7 +6,7 @@ const read=p=>fs.readFileSync(path.join(root,p),"utf8");
 test("single restore keeps lobby bell, What's New, INDEX and CODES",()=>{
   const html=read("public/index.html"),client=read("public/client.js"),server=read("server.js"),css=read("public/style.css");
   for(const id of ["notificationBell","openWhatsNewBtn","lobbySideActions","indexBookBtn","codesBtn","codesOverlay"])assert.match(html,new RegExp('id="'+id+'"'));
-  assert.match(client,/DREAD SHIFT restore-all top lobby tools/);
+  assert.match(client,/function pushNotification\\(/);\n  assert.match(html,/id="notificationCenter"/);
   assert.match(client,/function openCodes\(/);
   assert.match(css,/restore-whats-new/);
   assert.match(server,/const DEVELOPER_CODES=/);
