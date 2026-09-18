@@ -14,7 +14,7 @@ function createZip(dir,target){const files=walk(dir).map(full=>({full,name:path.
 async function main(){
   const backend=getBackend();cleanDir(OUT);copyDir(PUBLIC,OUT);
   const clientPath=path.join(OUT,"client.js");let client=read(clientPath);
-  client=mustReplace(client,'  const proto=location.protocol==="https:"?"wss":"ws";\n  ws=new WebSocket(`${proto}://${location.host}`);','  const proto=location.protocol==="https:"?"wss":"ws";\n  const wsTarget=window.DREAD_WS_URL||(`${proto}://${location.host}`);\n  ws=new WebSocket(wsTarget);',"external WebSocket endpoint");
+  const wsRe=/ws=new WebSocket\\([^;\\n]*location\\.host[^;\\n]*\\);/;if(!wsRe.test(client))throw new Error("Yandex build target missing: external WebSocket endpoint");client=client.replace(wsRe,'ws=new WebSocket(window.DREAD_WS_URL||(`${proto}://${location.host}`));');
   client=client.replace('const response=await fetch(`/api/auth/${type}`,','const response=await fetch((window.DREAD_HTTP_BASE||"")+`/api/auth/${type}`, ');
   client=mustReplace(client,'function playSfx(kind,ambient=false){\n  if(!settings.audioEnabled)return;','function playSfx(kind,ambient=false){\n  if(window.__DREAD_PLATFORM_MUTED__||!settings.audioEnabled)return;',"platform audio mute");
   client=mustReplace(client,'  const a=base.cloneNode();','  const a=base.cloneNode();window.__DREAD_ACTIVE_AUDIO__?.add(a);a.addEventListener("ended",()=>window.__DREAD_ACTIVE_AUDIO__?.delete(a),{once:true});',"active audio tracking");
