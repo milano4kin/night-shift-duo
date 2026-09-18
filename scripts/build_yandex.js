@@ -14,13 +14,9 @@ function createZip(dir,target){const files=walk(dir).map(full=>({full,name:path.
 async function main(){
   const backend=getBackend();cleanDir(OUT);copyDir(PUBLIC,OUT);
   const clientPath=path.join(OUT,"client.js");let client=read(clientPath);
-  client=client.replace('const response=await fetch(`/api/auth/${type}`,','const response=await fetch((window.DREAD_HTTP_BASE||"")+`/api/auth/${type}`, ');
-  client=mustReplace(client,'function playSfx(kind,ambient=false){\n  if(!settings.audioEnabled)return;','function playSfx(kind,ambient=false){\n  if(window.__DREAD_PLATFORM_MUTED__||!settings.audioEnabled)return;',"platform audio mute");
-  client=mustReplace(client,'  const a=base.cloneNode();','  const a=base.cloneNode();window.__DREAD_ACTIVE_AUDIO__?.add(a);a.addEventListener("ended",()=>window.__DREAD_ACTIVE_AUDIO__?.delete(a),{once:true});',"active audio tracking");
-  client=client.replace('metaState=m.meta;if(m.meta?.account)','metaState=m.meta;window.dispatchEvent(new CustomEvent("dread:yandex-meta",{detail:m.meta}));if(m.meta?.account)');
-  const frameAnchor="frame();\n})();";if(!client.includes(frameAnchor))throw new Error("Yandex build target missing: final frame anchor");
+  const framePos=client.lastIndexOf("frame();");if(framePos<0)throw new Error("Yandex build target missing: frame() bootstrap");
   const hooks=['window.addEventListener("dread:yandex-pause",()=>{stopGameInput();if(roomMode==="solo"&&state?.started&&!serverPaused){window.__DREAD_YANDEX_AUTO_PAUSED__=true;send("setPaused",{paused:true});}});','window.addEventListener("dread:yandex-resume",()=>{if(window.__DREAD_YANDEX_AUTO_PAUSED__&&roomMode==="solo"&&state?.started&&!pauseOpen){window.__DREAD_YANDEX_AUTO_PAUSED__=false;send("setPaused",{paused:false});}});','window.addEventListener("dread:yandex-rewarded",()=>send("yandexRewarded"));',""] .join("\n");
-  client=client.replace(frameAnchor,hooks+frameAnchor);new Function(client);
+  client=client.slice(0,framePos)+hooks+client.slice(framePos);new Function(client);
   const min=await terser.minify(client,{compress:{passes:2},mangle:true,format:{comments:false}});if(!min.code)throw new Error("Terser failed");const h=crypto.createHash("sha256").update(min.code).digest("hex").slice(0,12),bundleRel="assets/game.yandex."+h+".min.js";write(path.join(OUT,bundleRel),min.code);fs.rmSync(clientPath);
   const bridge=read(BRIDGE_SOURCE).replaceAll("__DREAD_BACKEND_URL__",backend);new Function(bridge);write(path.join(OUT,"yandex_bridge.js"),bridge);
   let html=read(path.join(OUT,"index.html"));const clientRe=/<script\s+src=["']\.\/client\.js["']><\/script>/;if(!clientRe.test(html))throw new Error("index client script missing");html=html.replace(clientRe,"");
