@@ -292,6 +292,7 @@ function patchServer(){
       'const server=http.createServer((req,res)=>{',
       '  const requestPath=req.url.split("?")[0];',
       '  if(req.method==="POST"&&(requestPath==="/api/auth/register"||requestPath==="/api/auth/login")){',
+      '    if(typeof allowAuthAttempt==="function"&&!allowAuthAttempt(req)){res.writeHead(429,{"Content-Type":"application/json; charset=utf-8","Cache-Control":"no-store","Retry-After":"30"});return res.end(JSON.stringify({ok:false,message:"Слишком много попыток. Подождите около 30 секунд."}));}',
       '    let bodyText="";req.setEncoding("utf8");',
       '    req.on("data",chunk=>{if(bodyText.length<=8192)bodyText+=chunk;});',
       '    req.on("end",()=>{',
