@@ -11,7 +11,9 @@ const finalReady=
   client.includes("function pushNotification(") &&
   html.includes('id="codesOverlay"') &&
   html.includes('id="notificationBell"') &&
-  css.includes("DREAD SHIFT restore-all notification center");
+  css.includes("DREAD SHIFT restore-all notification center") &&
+  server.includes("/* DREAD SHIFT runtime revision 2026-09-18-deep1 */") &&
+  client.includes("/* DREAD SHIFT runtime revision 2026-09-18-deep1 */");
 if(finalReady){
   console.log("DREAD SHIFT runtime guard: final v8.9.9 runtime already applied; skipping mutation chain.");
   process.exit(0);
