@@ -20,6 +20,8 @@ jobs:
           cache: npm
       - name: Install dependencies
         run: npm ci --no-audit --no-fund
+      - name: Publication preflight
+        run: npm run preflight:yandex
       - name: Build Yandex Games archive
         env:
           YANDEX_BACKEND_URL: ${{ inputs.backend_url }}
