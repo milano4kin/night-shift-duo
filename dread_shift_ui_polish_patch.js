@@ -4,6 +4,7 @@ const F=r=>path.join(__dirname,r),R=r=>fs.readFileSync(F(r),"utf8"),W=(r,s)=>fs.
 const marker="/* DREAD SHIFT lobby polish 2026-09-18 */";
 let html=R("public/index.html"),client=R("public/client.js"),css=R("public/style.css");
 let hd=false,cd=false,sd=false;
+if(html.includes('placeholder="например milano4kin"')){html=html.replace('placeholder="например milano4kin"','placeholder="например: Player123"');hd=true;}
 
 function eyeButton(target){
   return '<button class="password-toggle" data-password-target="'+target+'" type="button" title="Показать пароль" aria-label="Показать пароль" aria-pressed="false" onclick="const i=document.getElementById(\''+target+'\');if(i){i.type=i.type===\'password\'?\'text\':\'password\';this.textContent=i.type===\'password\'?\'👁\':\'🙈\';this.setAttribute(\'aria-pressed\',String(i.type===\'text\'));}">👁</button>';
