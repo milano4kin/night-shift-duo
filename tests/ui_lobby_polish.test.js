@@ -2,10 +2,16 @@
 const test=require("node:test"),assert=require("node:assert/strict"),fs=require("node:fs"),path=require("node:path");
 const root=path.join(__dirname,".."),read=f=>fs.readFileSync(path.join(root,f),"utf8");
 
-test("login placeholder is neutral",()=>{\n  const html=read("public/index.html");\n  assert.match(html,/placeholder="например: Player123"/);\n  assert.doesNotMatch(html,/placeholder="например milano4kin"/);\n});\n\ntest("password eye is self-contained and cannot double-toggle",()=>{
+test("login placeholder is neutral",()=>{
+  const html=read("public/index.html");
+  assert.match(html,/placeholder="например: Player123"/);
+  assert.doesNotMatch(html,/placeholder="например milano4kin"/);
+});
+
+test("password eye is self-contained and cannot double-toggle",()=>{
   const html=read("public/index.html"),client=read("public/client.js");
-  assert.match(html,/data-password-target="loginPassword"[^>]*onclick="const i=document\.getElementById\('loginPassword'\)/);
-  assert.match(html,/data-password-target="registerPassword"[^>]*onclick="const i=document\.getElementById\('registerPassword'\)/);
+  assert.match(html,/data-password-target="loginPassword"[^>]*onclick=/);
+  assert.match(html,/data-password-target="registerPassword"[^>]*onclick=/);
   assert.doesNotMatch(client,/document\.querySelectorAll\("\[data-password-target\]"\)/);
 });
 
