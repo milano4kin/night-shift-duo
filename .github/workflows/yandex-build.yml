@@ -27,10 +27,11 @@ jobs:
       - name: Validate archive
         run: |
           test -f dist/dread-shift-yandex.zip
+          unzip -t dist/dread-shift-yandex.zip
           test -f dist/yandex/index.html
           grep -q '/sdk.js' dist/yandex/index.html
           grep -q 'yandex_bridge.js' dist/yandex/index.html
-          ! grep -q './client.js' dist/yandex/index.html
+          ! grep -Eq 'src="(\\./)?client\\.js"' dist/yandex/index.html
       - name: Upload Yandex archive
         uses: actions/upload-artifact@v4
         with:
