@@ -31,6 +31,26 @@ class Probe{
     host.send("resumeSession",{token:ra.body.session.token});guest.send("resumeSession",{token:rb.body.session.token});
     await host.type("authSuccess");await guest.type("authSuccess");
 
+    // Social request/accept must be server-authoritative and visible to both accounts.
+    host.clear();guest.clear();host.send("accountFriendAdd",{username:b.username});
+    await host.wait(m=>m.type==="notice"&&/Запрос в друзья отправлен|friend request/i.test(String(m.text||"")),"friend request sent");
+    guest.send("accountFriendSync");
+    const guestSocial=await guest.wait(m=>m.type==="metaState"&&m.meta?.account?.friendRequests?.incoming?.some(x=>x.username===a.username),"incoming friend request");
+    assert(guestSocial.meta.account.friendRequests.incoming.some(x=>x.username===a.username),"guest missing incoming request");
+    guest.clear();guest.send("accountFriendAccept",{username:a.username});
+    await guest.wait(m=>m.type==="notice"&&/Запрос принят|accepted/i.test(String(m.text||"")),"friend request accepted");
+    host.clear();host.send("accountFriendSync");
+    const hostFriends=await host.wait(m=>m.type==="metaState"&&m.meta?.account?.friends?.some(x=>x.username===b.username),"host friend list");
+    assert(hostFriends.meta.account.friends.some(x=>x.username===b.username),"host missing accepted friend");
+
+    // Starter silver should be enough to buy and equip the cheapest cosmetic.
+    host.clear();host.send("metaCosmeticBuy",{id:"wa"});
+    const bought=await host.wait(m=>m.type==="metaState"&&m.meta?.cosmeticsOwned?.includes("wa"),"cosmetic buy");
+    assert(bought.meta.cosmeticsOwned.includes("wa"),"cosmetic ownership missing after buy");
+    host.clear();host.send("metaCosmeticEquip",{slot:"weapon",id:"wa"});
+    const equipped=await host.wait(m=>m.type==="metaState"&&m.meta?.equippedCosmetics?.weapon==="wa","cosmetic equip");
+    assert(equipped.meta.equippedCosmetics.weapon==="wa","cosmetic did not equip");
+
     host.send("createRoom",{mode:"duo",character:"starter"});
     const hj=await host.type("joined");
     assert(hj.mode==="duo"&&hj.isHost===true,"host room metadata wrong");
@@ -73,6 +93,6 @@ class Probe{
     guest2.send("leaveToLobby");await guest2.type("returnedToLobby");
     host.send("leaveToLobby");await host.type("returnedToLobby");
     guest2.close();host.close();
-    console.log("[duo-audit] PASS join/host-authority/start/skip/two-player/reconnect");
+    console.log("[duo-audit] PASS social/cosmetics/join/host-authority/start/skip/two-player/reconnect");
   }finally{try{child.kill("SIGTERM")}catch{}}
 })().catch(err=>{console.error("[duo-audit] FAIL",err?.stack||err);console.error(logs.join(""));try{child.kill("SIGKILL")}catch{};process.exit(1)});
