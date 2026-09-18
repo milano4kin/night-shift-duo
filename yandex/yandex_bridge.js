@@ -7,6 +7,14 @@
   window.__DREAD_YANDEX__=true;
   window.DREAD_HTTP_BASE=BACKEND;
   window.DREAD_WS_URL=BACKEND.replace(/^http/i,"ws");
+  const NativeWebSocket=window.WebSocket;
+  window.WebSocket=class DreadYandexWebSocket extends NativeWebSocket{
+    constructor(url,protocols){
+      let target=String(url||"");
+      try{const parsed=new URL(target,location.href);if((parsed.protocol==="ws:"||parsed.protocol==="wss:")&&parsed.host===location.host)target=window.DREAD_WS_URL;}catch{}
+      if(protocols===undefined)super(target);else super(target,protocols);
+    }
+  };
   document.documentElement.classList.add("yandex-build");
 
   function mountBoot(){
