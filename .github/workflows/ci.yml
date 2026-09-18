@@ -2,7 +2,7 @@ name: Dread Shift CI
 
 on:
   push:
-    branches: [main, "yandex/**"]
+    branches: [main]
   workflow_dispatch:
 
 jobs:
