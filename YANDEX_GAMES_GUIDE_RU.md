@@ -548,3 +548,140 @@ All graphics, audio, UI and game assets are stored inside the Yandex Games archi
 - Automatic language: https://yandex.com/dev/games/doc/en/requirements/2/14
 - Focus/sound requirement: https://yandex.com/dev/games/doc/en/requirements/1/3
 - Monetization: https://yandex.com/dev/games/doc/en/services/about-monetization
+
+
+---
+
+# 13. Готовые тексты для Draft
+
+Перед отправкой проверь, что название **DREAD SHIFT** свободно в Console: требования Яндекс Игр требуют уникальное название для каждого выбранного языка.
+
+## Русский
+
+### Название
+
+```text
+DREAD SHIFT
+```
+
+### Короткое описание
+
+```text
+Защищай генератор от ночных волн заражённых, строй оборону, открывай оружие, питомцев и постоянные улучшения. Продержись 50 волн и победи боссов DREAD SHIFT.
+```
+
+### Полное описание
+
+```text
+DREAD SHIFT — браузерная игра про оборону базы и выживание против волн заражённых.
+
+Днём подготовь генератор к следующей атаке: добывай ресурсы, строй стены, шипы и башни, покупай оружие и улучшай снаряжение. Ночью отбивай волны врагов и не дай разрушить генератор.
+
+В игре есть классы персонажей, питомцы, постоянные улучшения, достижения, индекс противников, история забегов, боссы и награды за пройденные этапы. Цель забега — пройти 50 волн.
+```
+
+### Как играть
+
+```text
+WASD — движение.
+Мышь — прицеливание и атака.
+1 — оружие.
+2 — мультитул для добычи и строительства.
+3 — аптечка.
+R — перезарядка.
+ESC — пауза и настройки.
+
+Во время подготовки собирай ресурсы и строй защиту вокруг генератора. Ночью уничтожай заражённых и защищай базу. Магазин и улучшения генератора доступны только во время подготовки.
+```
+
+## English
+
+### Title
+
+```text
+DREAD SHIFT
+```
+
+### Short description
+
+```text
+Defend the generator from infected night waves, build defenses, unlock weapons, pets and permanent upgrades. Survive 50 waves and defeat the bosses of DREAD SHIFT.
+```
+
+### Full description
+
+```text
+DREAD SHIFT is a browser base-defense survival game built around escalating waves of infected enemies.
+
+During preparation, gather resources, reinforce the generator, build walls, spikes and towers, buy weapons and improve your equipment. At night, survive the attack and keep the generator alive.
+
+The game includes character classes, pets, permanent upgrades, achievements, an enemy index, run history, bosses and milestone rewards. Your goal is to survive all 50 waves.
+```
+
+### How to play
+
+```text
+WASD — move.
+Mouse — aim and attack.
+1 — weapon.
+2 — multitool for gathering and building.
+3 — medkit.
+R — reload.
+ESC — pause and settings.
+
+Gather resources and build defenses during preparation. Fight infected enemies and protect the generator at night. The generator shop and upgrades are available only during preparation.
+```
+
+## Жанр и теги
+
+В Console названия категорий могут меняться. Выбирай только реально подходящие варианты. Для текущего DREAD SHIFT при наличии таких пунктов подходят:
+- Action;
+- Survival;
+- Strategy / Tower Defense как дополнительная механика, но не называй игру чистым Tower Defense, потому что игрок сам управляет персонажем.
+
+Не указывай жанры, которых в игре нет.
+
+---
+
+# 14. Промоматериалы
+
+Яндекс требует, чтобы скриншоты показывали реальную игру. Для обычных скриншотов gameplay должен занимать не менее 70% изображения.
+
+Подготовь минимум такие кадры:
+1. активная ночная волна с персонажем, базой и несколькими типами врагов;
+2. строительство стены/башни вокруг генератора;
+3. бой с одним из боссов;
+4. лобби с классами или постоянными улучшениями;
+5. поздняя волна с развитой базой.
+
+Для **иконки и обложки** не используй обычный скриншот игры. Сделай отдельные промо-изображения без системного UI, рамок браузера, рейтинга Яндекс Игр и сторонних логотипов.
+
+Название на промоматериалах, если оно написано текстом, должно совпадать с названием игры: **DREAD SHIFT**.
+
+---
+
+# 15. Финальная автоматическая проверка
+
+Перед каждой отправкой новой версии:
+
+```powershell
+npm run preflight:yandex
+$env:YANDEX_BACKEND_URL="https://YOUR-SERVICE.onrender.com"
+npm run build:yandex
+```
+
+`preflight:yandex` автоматически проверяет:
+- обязательный SDK;
+- Game Ready;
+- Gameplay Start/Stop;
+- pause/resume события;
+- автоматический язык через SDK;
+- остановку audio/video;
+- fullscreen и rewarded рекламу;
+- отсутствие fullscreen-рекламы по таймеру;
+- отсутствие внешних ссылок/редиректов в игровом клиенте;
+- гостевой Yandex Player flow;
+- скрытие старого логина/пароля;
+- ограничения ZIP и наличие инструкции публикации.
+
+Эта проверка не заменяет Debug Panel в Developer Console: финально Game Ready, gameplay markers, i18n, рекламу, focus/sound и размеры окна нужно проверить именно в Yandex Draft.
