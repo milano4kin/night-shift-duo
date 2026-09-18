@@ -25,3 +25,16 @@ npm test
 ```
 
 Runtime использует один финальный restore-entry point; старые restore-модули больше не перечислены в `patch:runtime`.\n\nProduction build дополнительно минифицирует браузерный клиент через `scripts/protect_client.js`.
+
+
+## Яндекс Игры
+
+Для Яндекс Игр используется отдельная Desktop/SOLO-сборка. Обычная web-версия и DUO не удаляются.
+
+```bash
+YANDEX_BACKEND_URL=https://your-backend.example npm run build:yandex
+```
+
+Результат: `dist/dread-shift-yandex.zip`.
+
+Полный гайд по Developer Console, CSP, рекламе, SDK, Debug Panel и модерации: [YANDEX_GAMES_GUIDE_RU.md](./YANDEX_GAMES_GUIDE_RU.md).

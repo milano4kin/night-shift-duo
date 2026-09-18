@@ -1,0 +1,41 @@
+name: Build Yandex Games archive
+
+on:
+  workflow_dispatch:
+    inputs:
+      backend_url:
+        description: "Public HTTPS backend, for example https://your-service.onrender.com"
+        required: true
+        type: string
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+      - name: Build Yandex Games archive
+        env:
+          YANDEX_BACKEND_URL: ${{ inputs.backend_url }}
+        run: npm run build:yandex
+      - name: Validate archive
+        run: |
+          test -f dist/dread-shift-yandex.zip
+          unzip -t dist/dread-shift-yandex.zip
+          test -f dist/yandex/index.html
+          grep -q '/sdk.js' dist/yandex/index.html
+          grep -q 'yandex_bridge.js' dist/yandex/index.html
+          ! grep -Eq 'src="(\\./)?client\\.js"' dist/yandex/index.html
+      - name: Upload Yandex archive
+        uses: actions/upload-artifact@v4
+        with:
+          name: dread-shift-yandex
+          path: dist/dread-shift-yandex.zip
+          if-no-files-found: error
+          retention-days: 14
