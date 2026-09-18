@@ -21,7 +21,7 @@ html=html.replace("ОБНОВЛЕНИЕ V8.0","DREAD SHIFT · UPDATE 8.9.9").rep
 if(!client.includes("function openLobbySettings(){")){
   const a="function openPause(){";
   if(!client.includes(a))throw new Error("ui-polish: openPause anchor missing");
-  client=client.replace(a,'function openLobbySettings(){pauseOpen=false;pauseOverlay.classList.add("visible","lobby-settings-open");$("pauseMainMenu").classList.add("hidden");$("pauseSettingsPanel").classList.remove("hidden");syncSettingsUi();}\\n'+a);cd=true;
+  client=client.replace(a,'function openLobbySettings(){pauseOpen=false;pauseOverlay.classList.add("visible","lobby-settings-open");$("pauseMainMenu").classList.add("hidden");$("pauseSettingsPanel").classList.remove("hidden");syncSettingsUi();}\n'+a);cd=true;
 }
 if(client.includes('$("quickSettingsBtn").onclick=()=>openPause();')){client=client.replace('$("quickSettingsBtn").onclick=()=>openPause();','$("quickSettingsBtn").onclick=()=>state?.started?openPause():openLobbySettings();');cd=true;}
 const backOld='$("pauseBackBtn").onclick=()=>{$("pauseSettingsPanel").classList.add("hidden");$("pauseMainMenu").classList.remove("hidden");};';
