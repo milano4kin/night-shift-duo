@@ -1,6 +1,11 @@
 "use strict";
 const fs=require("node:fs"),path=require("node:path");
 const read=rel=>fs.readFileSync(path.join(__dirname,rel),"utf8");
+const finalServer=read("server.js"),finalClient=read("public/client.js");
+if(finalServer.includes('const BUILD_VERSION = "8.9.9";')&&finalServer.includes("/* DREAD SHIFT v8.9.9 server */")&&finalClient.includes("/* DREAD SHIFT v8.9.9 client */")){
+  console.log("DREAD SHIFT v8.9 verifier: final v8.9.9 runtime already applied");
+  process.exit(0);
+}
 const required={
   "server.js":["/* DREAD SHIFT v8.9 server */",'const BUILD_VERSION = "8.9.1";',"hp:680","prevX:p.x","pointSegmentDistance(z.x,z.y,bulletFromX","V88_COS","v882Social"],
   "public/client.js":["/* DREAD SHIFT v8.9 client */","wallSnapEnabled=true","updateMetaAttention","showLevelUp","WALL_HALF_THICK=13","/* DREAD SHIFT v8.8.1 client */","friendRequests?.incoming"],
