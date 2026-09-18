@@ -78,6 +78,7 @@ if(!server.includes("if(!allowMessage())return;"))fail("WS per-connection rate l
 if(!server.includes("maxPayload:WS_MAX_PAYLOAD"))fail("WS max payload not configured");
 if(!server.includes('file!==publicRoot&&!file.startsWith(publicRoot+path.sep)')&&!server.includes('if(!file.startsWith(PUBLIC))'))fail("static root traversal guard missing");
 if(!server.includes('if(bodyText.length>8192)'))fail("HTTP auth body limit missing");
+if(!server.includes('typeof allowAuthAttempt==="function"&&!allowAuthAttempt(req)'))fail("HTTP auth bypasses auth rate limiter");
 if(/NSD_QA_ADMIN[^\n]+production/.test(server)===false)warn("could not prove QA admin is disabled in production");
 
 // Known dangerous leftovers / regressions.
