@@ -177,8 +177,9 @@
     if(typeof YaGames==="undefined")throw new Error("Yandex Games SDK was not loaded");
     bootText("Инициализируем платформу…");
     ysdk=await YaGames.init();window.ysdk=ysdk;
-    mapLanguage();setupPlatformEvents();installCloudTelemetry();
+    mapLanguage();setupPlatformEvents();
     await createBackendSession();
+    installCloudTelemetry();
     document.documentElement.classList.add("yandex-session-ready");
     bootText("Загружаем DREAD SHIFT…");
     await loadGame();
