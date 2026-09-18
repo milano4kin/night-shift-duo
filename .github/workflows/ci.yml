@@ -58,7 +58,7 @@ jobs:
           grep -q 'DREAD SHIFT v8.9.9.3 connected wall upgrades' server.js
           grep -q 'DREAD SHIFT v8.9.9.4 hotbar fit' public/style.css
           grep -q 'DREAD SHIFT full restore 2026-09-13 server' server.js
-          grep -q 'DREAD SHIFT restore-all top lobby tools' public/client.js
+          grep -q 'function pushNotification' public/client.js\n          grep -q 'DREAD SHIFT restore-all notification center' public/style.css
           grep -q 'DREAD SHIFT full restore 2026-09-13 client' public/client.js
           grep -q 'id="notificationBell"' public/index.html
           grep -q 'id="openWhatsNewBtn"' public/index.html
