@@ -82,6 +82,7 @@ if(!server.includes('typeof allowAuthAttempt==="function"&&!allowAuthAttempt(req
 if(!server.includes("while(authAttemptBuckets.size>2048)"))fail("auth throttle map is not hard-capped");
 if(!server.includes('if(m.type==="redeemCode")')||!server.includes('send(ws,"codeRedeemResult",result)'))fail("promo code websocket handler missing");
 if(!server.includes("rewardMilestones:Array.isArray(x.rewardMilestones)"))fail("run history reward metadata is not preserved by normalization");
+if(server.includes("spikeContactState.get(")&&!server.includes("const spikeContactState=new Map();"))fail("spike runtime references an undefined contact-state map");
 if(/NSD_QA_ADMIN[^\n]+production/.test(server)===false)warn("could not prove QA admin is disabled in production");
 
 // Known dangerous leftovers / regressions.
