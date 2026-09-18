@@ -2,7 +2,7 @@ name: Dread Shift CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, "fix/**"]
   workflow_dispatch:
 
 jobs:
@@ -39,6 +39,7 @@ jobs:
           node --check dread_shift_v8_9_9_3_patch.js
           node --check dread_shift_v8_9_9_4_patch.js
           node --check dread_shift_restore_all_patch.js
+          node --check dread_shift_ui_hud_fix_patch.js
           node --check scripts/protect_client.js
           node --check db_bridge.js
           cp v88_client_extension.jsfrag /tmp/v88_client_extension.js
@@ -60,6 +61,9 @@ jobs:
           grep -q 'DREAD SHIFT full restore 2026-09-13 server' server.js
           grep -q 'function pushNotification' public/client.js
           grep -q 'DREAD SHIFT restore-all notification center' public/style.css
+          grep -q 'DREAD SHIFT UI HUD fix 2026-09-18' public/style.css
+          grep -q 'document.getElementById(btn.dataset.passwordTarget)' public/client.js
+          ! grep -q 'Compact ammo strip above the hotbar' public/client.js
           grep -q 'DREAD SHIFT full restore 2026-09-13 client' public/client.js
           grep -q 'id="notificationBell"' public/index.html
           grep -q 'id="openWhatsNewBtn"' public/index.html
